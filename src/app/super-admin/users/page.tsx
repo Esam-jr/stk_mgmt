@@ -5,6 +5,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { Edit2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 type User = {
@@ -13,7 +14,7 @@ type User = {
   lastName: string;
   email: string;
   role: string;
-  branch?: { name: string };
+
 };
 
 type Branch = { id: string; name: string };
@@ -23,6 +24,8 @@ export default function UsersPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -49,28 +52,66 @@ export default function UsersPage() {
     }
   };
 
+  const handleEdit = (user: User) => {
+    setEditingUserId(user.id);
+    setFormData({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      password: "", // empty means leave unchanged
+      role: user.role,
+      branchId: user.branch?.id || "" // wait, branch is not guaranteed to have id in type if we don't fetch it, let's fix type
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    setIsDeletingId(id);
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("User deleted successfully");
+      fetchData();
+    } catch (e) {
+      toast.error("Failed to delete user");
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
+      const isEditing = !!editingUserId;
+      const url = isEditing ? `/api/users/${editingUserId}` : "/api/users";
+      const method = isEditing ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             ...formData,
-            branchId: formData.branchId || undefined
+            branchId: formData.role === "SALES" ? formData.branchId || undefined : undefined
         }),
       });
+      
       if (!res.ok) throw new Error(await res.text());
-      toast.success("User created successfully");
-      setIsModalOpen(false);
-      setFormData({ firstName: "", lastName: "", email: "", password: "", role: "SALES", branchId: "" });
+      toast.success(isEditing ? "User updated successfully" : "User created successfully");
+      closeModal();
       fetchData();
     } catch (e) {
-      toast.error("Failed to create user");
+      toast.error(editingUserId ? "Failed to update user" : "Failed to create user");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingUserId(null);
+    setFormData({ firstName: "", lastName: "", email: "", password: "", role: "SALES", branchId: "" });
   };
 
   const columns = [
@@ -78,6 +119,19 @@ export default function UsersPage() {
     { header: "Email", accessorKey: "email" as keyof User },
     { header: "Role", cell: (u: User) => <span className="px-2 py-1 bg-zinc-800 rounded text-xs">{u.role}</span> },
     { header: "Branch", cell: (u: User) => u.branch?.name || "All Branches" },
+    {
+      header: "Actions",
+      cell: (u: User) => (
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={() => handleEdit(u)}>
+            <Edit2 className="w-4 h-4 text-zinc-400" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} isLoading={isDeletingId === u.id}>
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </Button>
+        </div>
+      )
+    }
   ];
 
   return (
@@ -93,7 +147,7 @@ export default function UsersPage() {
         <DataTable columns={columns} data={users} />
       )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New User">
+      <Modal isOpen={isModalOpen} onClose={closeModal} title={editingUserId ? "Edit User" : "Create New User"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -110,8 +164,8 @@ export default function UsersPage() {
             <Input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Password</label>
-            <Input type="password" required minLength={6} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+            <label className="text-sm text-zinc-400 mb-1 block">Password {editingUserId && "(Leave empty to keep)"}</label>
+            <Input type="password" required={!editingUserId} minLength={6} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
           </div>
           <div>
             <label className="text-sm text-zinc-400 mb-1 block">Role</label>
@@ -126,7 +180,7 @@ export default function UsersPage() {
             </select>
           </div>
           
-          {(formData.role === "SALES" || formData.role === "MAIN_ADMIN") && (
+          {formData.role === "SALES" && (
             <div>
               <label className="text-sm text-zinc-400 mb-1 block">Branch Allocation</label>
               <select 
@@ -143,8 +197,8 @@ export default function UsersPage() {
           )}
 
           <div className="mt-6 flex justify-end gap-3">
-            <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" isLoading={isSubmitting}>Create User</Button>
+            <Button variant="ghost" type="button" onClick={closeModal}>Cancel</Button>
+            <Button type="submit" isLoading={isSubmitting}>{editingUserId ? "Save Changes" : "Create User"}</Button>
           </div>
         </form>
       </Modal>

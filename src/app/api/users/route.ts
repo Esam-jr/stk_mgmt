@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 import { z } from "zod";
 
 const createUserSchema = z.object({
@@ -37,10 +37,24 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { firstName, lastName, email, password, role: userRole, branchId } = parsed.data;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await hashPassword(password);
 
   const user = await prisma.user.create({
-    data: { firstName, lastName, email, password: hashedPassword, role: userRole, branchId },
+    data: { 
+      firstName, 
+      lastName, 
+      email, 
+      password: hashedPassword, 
+      role: userRole, 
+      branchId: userRole === "SALES" ? branchId : null,
+      accounts: {
+        create: {
+          accountId: email,
+          providerId: "credential",
+          password: hashedPassword,
+        }
+      }
+    },
     include: { branch: true },
   });
   return Response.json({ ...user, password: undefined }, { status: 201 });
