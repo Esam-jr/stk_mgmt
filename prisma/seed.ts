@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from '@prisma/client'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
-import bcrypt from 'bcryptjs'
+import { hashPassword } from 'better-auth/crypto'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool as any)
@@ -21,7 +21,7 @@ async function main() {
   })
 
   // 2. Create Users
-  const superAdminPassword = await bcrypt.hash('password123', 10)
+  const superAdminPassword = await hashPassword('password123')
   await prisma.user.create({ 
     data: {
       firstName: 'Super',
@@ -29,10 +29,17 @@ async function main() {
       email: 'admin@stk.com',
       password: superAdminPassword,
       role: 'SUPER_ADMIN',
+      accounts: {
+        create: {
+          accountId: 'admin@stk.com',
+          providerId: 'credential',
+          password: superAdminPassword,
+        }
+      }
     },
   })
 
-  const mainAdminPassword = await bcrypt.hash('password123', 10)
+  const mainAdminPassword = await hashPassword('password123')
   await prisma.user.create({
     data: {
       firstName: 'Main',
@@ -40,10 +47,17 @@ async function main() {
       email: 'manager@stk.com',
       password: mainAdminPassword,
       role: 'MAIN_ADMIN',
+      accounts: {
+        create: {
+          accountId: 'manager@stk.com',
+          providerId: 'credential',
+          password: mainAdminPassword,
+        }
+      }
     },
   })
 
-  const salesPassword = await bcrypt.hash('password123', 10)
+  const salesPassword = await hashPassword('password123')
   await prisma.user.create({
     data: {
       firstName: 'John',
@@ -52,6 +66,13 @@ async function main() {
       password: salesPassword,
       role: 'SALES',
       branchId: mainBranch.id,
+      accounts: {
+        create: {
+          accountId: 'sales1@stk.com',
+          providerId: 'credential',
+          password: salesPassword,
+        }
+      }
     },
   })
 
