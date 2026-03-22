@@ -7,8 +7,10 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Edit2, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { Branch } from "@prisma/client";
 
 type User = {
+  branch: any;
   id: string;
   firstName: string;
   lastName: string;
@@ -16,8 +18,6 @@ type User = {
   role: string;
 
 };
-
-type Branch = { id: string; name: string };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -187,6 +187,7 @@ export default function UsersPage() {
                 className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
                 value={formData.branchId} 
                 onChange={e => setFormData({ ...formData, branchId: e.target.value })}
+                required={formData.role === "SALES"}
               >
                 <option value="">Select a branch...</option>
                 {branches.map(b => (

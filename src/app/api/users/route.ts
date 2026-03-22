@@ -11,7 +11,10 @@ const createUserSchema = z.object({
   password: z.string().min(6),
   role: z.enum(["SUPER_ADMIN", "MAIN_ADMIN", "SALES"]),
   branchId: z.string().optional(),
-});
+}).refine((data) => {
+  if (data.role === "SALES" && !data.branchId) return false;
+  return true;
+}, { message: "Branch is required for SALES role", path: ["branchId"] });
 
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });

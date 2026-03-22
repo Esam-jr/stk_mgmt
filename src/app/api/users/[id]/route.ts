@@ -11,7 +11,10 @@ const updateUserSchema = z.object({
   password: z.string().min(6).optional().or(z.literal("")),
   role: z.enum(["SUPER_ADMIN", "MAIN_ADMIN", "SALES"]).optional(),
   branchId: z.string().nullable().optional(),
-});
+}).refine((data) => {
+  if (data.role === "SALES" && !data.branchId) return false;
+  return true;
+}, { message: "Branch is required for SALES role", path: ["branchId"] });
 
 type Context = { params: Promise<{ id: string }> };
 
