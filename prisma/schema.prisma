@@ -1,0 +1,109 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  MAIN_ADMIN
+  SALES
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  password  String
+  role      Role     @default(SALES)
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales          Sale[]
+  transfers      StockTransfer[]
+  sessions       Session[]
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  stocks     Stock[]
+  salesFrom  Sale[]
+  transfersFrom StockTransfer[] @relation("TransferFrom")
+  transfersTo   StockTransfer[] @relation("TransferTo")
+}
+
+model Stock {
+  id           String   @id @default(cuid())
+  category     String
+  brand        String
+  size         String
+  quantity     Int      @default(0)
+  barcode      String   @unique @default(cuid())
+  priceIn      Float
+  sellingPrice Float
+  branchId     String
+  branch       Branch   @relation(fields: [branchId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales     Sale[]
+  transfers StockTransfer[]
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  stockId       String
+  stock         Stock         @relation(fields: [stockId], references: [id])
+  quantity      Int
+  paymentMethod PaymentMethod
+  soldById      String
+  soldBy        User          @relation(fields: [soldById], references: [id])
+  branchId      String
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  createdAt     DateTime      @default(now())
+}
+
+model StockTransfer {
+  id             String   @id @default(cuid())
+  stockId        String
+  stock          Stock    @relation(fields: [stockId], references: [id])
+  fromBranchId   String
+  fromBranch     Branch   @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranchId     String
+  toBranch       Branch   @relation("TransferTo", fields: [toBranchId], references: [id])
+  quantity       Int
+  transferredById String
+  transferredBy  User     @relation(fields: [transferredById], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+// better-auth requires Session model
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
