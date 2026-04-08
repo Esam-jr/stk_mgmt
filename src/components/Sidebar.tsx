@@ -10,6 +10,7 @@ import {
   BarChart3, 
   Package, 
   ShoppingCart,
+  History,
   LogOut,
   Boxes
 } from "lucide-react";
@@ -38,6 +39,7 @@ const mainAdminNav: SidebarItem[] = [
 
 const salesNav: SidebarItem[] = [
   { name: "Point of Sale", href: "/sales", icon: ShoppingCart },
+  { name: "Sales History", href: "/sales/history", icon: History },
 ];
 
 export function Sidebar({ role }: { role: string }) {

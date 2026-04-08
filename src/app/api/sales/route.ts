@@ -21,12 +21,18 @@ export async function GET(request: NextRequest) {
   const branchId = searchParams.get("branchId");
   const role = (session.user as { role?: string }).role;
   const userBranchId = (session.user as { branchId?: string }).branchId;
+  const userId = session.user.id;
 
-  // Restrict Sales to their own branch
-  const effectiveBranchId = role === "SALES" ? userBranchId : branchId;
+  // Sales users can only see their own sales records (from their branch).
+  const where =
+    role === "SALES"
+      ? { branchId: userBranchId, soldById: userId }
+      : branchId
+      ? { branchId }
+      : undefined;
 
   const sales = await prisma.sale.findMany({
-    where: effectiveBranchId ? { branchId: effectiveBranchId } : undefined,
+    where,
     include: {
       stock: true,
       soldBy: { select: { id: true, firstName: true, lastName: true } },

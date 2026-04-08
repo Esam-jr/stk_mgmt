@@ -101,143 +101,163 @@ export default function PosPage() {
   };
 
   const totalAmount = cart.reduce((acc, item) => acc + (item.sellingPrice * item.cartQty), 0);
+  const totalItems = cart.reduce((acc, item) => acc + item.cartQty, 0);
 
   return (
-    <div className="grid grid-cols-3 gap-8 h-[calc(100vh-8rem)]">
-      {/* Search & Results Section */}
-      <div className="col-span-2 flex flex-col space-y-4">
-        <div className="rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <form onSubmit={handleSearch} className="flex gap-3 relative">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
-              <Input
-                autoFocus
-                type="text"
-                placeholder="Search by Barcode, Category, Brand..."
-                className="pl-10 h-12 text-base"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button type="submit" size="lg" isLoading={isSearching}>Find Product</Button>
-          </form>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Point of Sale</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Search products, adjust quantities, and checkout quickly.</p>
         </div>
-
-        <div className="flex-1 overflow-y-auto rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Search Results</h2>
-          {searchResults.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500">
-              <PackageIcon className="mx-auto h-12 w-12 opacity-20 mb-3" />
-              <p>Search for a product to begin</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {searchResults.map((item) => (
-                <div key={item.id} className="flex flex-col justify-between rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                  <div>
-                    <h3 className="font-medium text-zinc-900 dark:text-white">{item.brand} - {item.category}</h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Size: {item.size} | Barcode: {item.barcode}</p>
-                    <div className="mt-2 text-lg font-bold text-indigo-400">${item.sellingPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span
-                      className={`text-sm font-medium ${
-                        item.quantity > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {item.quantity > 0 ? `${item.quantity} available` : "Out of stock"}
-                    </span>
-                    <Button 
-                      size="sm" 
-                      onClick={() => addToCart(item)}
-                      disabled={item.quantity === 0}
-                      variant="secondary"
-                    >
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-center dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="text-xs text-zinc-500">Items</p>
+            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{totalItems}</p>
+          </div>
+          <div className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-center dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="text-xs text-zinc-500">Total</p>
+            <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">${totalAmount.toFixed(2)}</p>
+          </div>
         </div>
       </div>
 
-      {/* Cart & Checkout Section */}
-      <div className="flex flex-col rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-white">
-          <ShoppingCart className="h-5 w-5 text-indigo-400" /> Current Sale
-        </h2>
-        
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-          {cart.length === 0 ? (
-            <p className="text-zinc-500 text-center mt-10">Cart is empty</p>
-          ) : (
-            cart.map((item) => (
-              <div key={item.id} className="flex items-center justify-between rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
-                <div>
-                  <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.category}</div>
-                  <div className="text-xs text-zinc-500">Barcode: {item.barcode} | Size: {item.size}</div>
-                  <div className="text-xs text-zinc-500">Unit Price: ${item.sellingPrice.toFixed(2)} | Available: {item.quantity}</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <label className="text-xs text-zinc-600 dark:text-zinc-400">Qty</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={item.quantity}
-                      value={item.cartQty}
-                      onChange={(e) => updateCartQty(item.id, Number(e.target.value))}
-                      className="h-8 w-20"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">${(item.sellingPrice * item.cartQty).toFixed(2)}</span>
-                  <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-300 text-xl leading-none">&times;</button>
-                </div>
+      <div className="grid h-[calc(100vh-12rem)] grid-cols-3 gap-8">
+        {/* Search & Results Section */}
+        <div className="col-span-2 flex flex-col space-y-4">
+          <div className="rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <form onSubmit={handleSearch} className="relative flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
+                <Input
+                  autoFocus
+                  type="text"
+                  placeholder="Search by Barcode, Category, Brand..."
+                  className="h-12 pl-10 text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-            ))
-          )}
+              <Button type="submit" size="lg" isLoading={isSearching}>Find Product</Button>
+            </form>
+          </div>
+
+          <div className="flex-1 overflow-y-auto rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Search Results</h2>
+            {searchResults.length === 0 ? (
+              <div className="py-12 text-center text-zinc-500">
+                <PackageIcon className="mx-auto mb-3 h-12 w-12 opacity-20" />
+                <p>Search for a product to begin</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {searchResults.map((item) => (
+                  <div key={item.id} className="flex flex-col justify-between rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                    <div>
+                      <h3 className="font-medium text-zinc-900 dark:text-white">{item.brand} - {item.category}</h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Size: {item.size} | Barcode: {item.barcode}</p>
+                      <div className="mt-2 text-lg font-bold text-indigo-400">${item.sellingPrice.toFixed(2)}</div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span
+                        className={`text-sm font-medium ${
+                          item.quantity > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {item.quantity > 0 ? `${item.quantity} available` : "Out of stock"}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => addToCart(item)}
+                        disabled={item.quantity === 0}
+                        variant="secondary"
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="mt-6 space-y-4 border-t border-zinc-300 pt-6 dark:border-zinc-800">
-          <div className="flex justify-between text-lg">
-            <span className="text-zinc-600 dark:text-zinc-400">Total</span>
-            <span className="text-2xl font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
+        {/* Cart & Checkout Section */}
+        <div className="flex flex-col rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-white">
+            <ShoppingCart className="h-5 w-5 text-indigo-400" /> Current Sale
+          </h2>
+
+          <div className="flex-1 space-y-3 overflow-y-auto pr-2">
+            {cart.length === 0 ? (
+              <p className="mt-10 text-center text-zinc-500">Cart is empty</p>
+            ) : (
+              cart.map((item) => (
+                <div key={item.id} className="flex items-center justify-between rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                  <div>
+                    <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.category}</div>
+                    <div className="text-xs text-zinc-500">Barcode: {item.barcode} | Size: {item.size}</div>
+                    <div className="text-xs text-zinc-500">Unit Price: ${item.sellingPrice.toFixed(2)} | Available: {item.quantity}</div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <label className="text-xs text-zinc-600 dark:text-zinc-400">Qty</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={item.quantity}
+                        value={item.cartQty}
+                        onChange={(e) => updateCartQty(item.id, Number(e.target.value))}
+                        className="h-8 w-20"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">${(item.sellingPrice * item.cartQty).toFixed(2)}</span>
+                    <button onClick={() => removeFromCart(item.id)} className="text-xl leading-none text-red-400 hover:text-red-300">&times;</button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400">Payment Method</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className={`flex items-center justify-center gap-2 py-3 rounded-md border transition-colors ${
-                  paymentMethod === "CASH" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                }`}
-                onClick={() => setPaymentMethod("CASH")}
-              >
-                <Banknote className="h-4 w-4" /> Cash
-              </button>
-              <button
-                type="button"
-                className={`flex items-center justify-center gap-2 py-3 rounded-md border transition-colors ${
-                  paymentMethod === "TRANSFER" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                }`}
-                onClick={() => setPaymentMethod("TRANSFER")}
-              >
-                <CreditCard className="h-4 w-4" /> Transfer
-              </button>
+          <div className="mt-6 space-y-4 border-t border-zinc-300 pt-6 dark:border-zinc-800">
+            <div className="flex justify-between text-lg">
+              <span className="text-zinc-600 dark:text-zinc-400">Total</span>
+              <span className="text-2xl font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
             </div>
-          </div>
 
-          <Button 
-            className="w-full h-14 text-lg" 
-            onClick={handleCheckout} 
-            disabled={cart.length === 0 || isProcessing}
-            isLoading={isProcessing}
-          >
-            Complete Sale
-          </Button>
+            <div className="space-y-2">
+              <label className="text-sm text-zinc-600 dark:text-zinc-400">Payment Method</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className={`flex items-center justify-center gap-2 rounded-md border py-3 transition-colors ${
+                    paymentMethod === "CASH" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                  onClick={() => setPaymentMethod("CASH")}
+                >
+                  <Banknote className="h-4 w-4" /> Cash
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center justify-center gap-2 rounded-md border py-3 transition-colors ${
+                    paymentMethod === "TRANSFER" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  }`}
+                  onClick={() => setPaymentMethod("TRANSFER")}
+                >
+                  <CreditCard className="h-4 w-4" /> Transfer
+                </button>
+              </div>
+            </div>
+
+            <Button
+              className="h-14 w-full text-lg"
+              onClick={handleCheckout}
+              disabled={cart.length === 0 || isProcessing}
+              isLoading={isProcessing}
+            >
+              Complete Sale
+            </Button>
+          </div>
         </div>
       </div>
     </div>
