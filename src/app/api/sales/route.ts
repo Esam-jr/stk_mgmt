@@ -4,9 +4,13 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 
 const saleSchema = z.object({
-  stockId: z.string().min(1),
-  quantity: z.number().int().min(1),
   paymentMethod: z.enum(["CASH", "TRANSFER"]),
+  items: z.array(
+    z.object({
+      stockId: z.string().min(1),
+      quantity: z.number().int().min(1),
+    })
+  ).min(1),
 });
 
 export async function GET(request: NextRequest) {
@@ -52,35 +56,44 @@ export async function POST(request: NextRequest) {
   const parsed = saleSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { stockId, quantity, paymentMethod } = parsed.data;
+  const { items, paymentMethod } = parsed.data;
 
   // Use transaction to ensure stock consistency
   try {
-    const sale = await prisma.$transaction(async (tx: any) => {
-      const stock = await tx.stock.findUnique({ where: { id: stockId } });
-      
-      if (!stock) throw new Error("Stock not found");
-      if (stock.branchId !== userBranchId) throw new Error("Stock is not in your branch");
-      if (stock.quantity < quantity) throw new Error("Insufficient stock");
+    const result = await prisma.$transaction(async (tx: any) => {
+      const saleRecords: any[] = [];
 
-      await tx.stock.update({
-        where: { id: stockId },
-        data: { quantity: stock.quantity - quantity },
-      });
+      for (const item of items) {
+        const stock = await tx.stock.findUnique({ where: { id: item.stockId } });
+        if (!stock) throw new Error("Stock not found");
+        if (stock.branchId !== userBranchId) throw new Error("Stock is not in your branch");
+        if (stock.quantity < item.quantity) {
+          throw new Error(`Insufficient stock for ${stock.brand} ${stock.category} (${stock.size})`);
+        }
 
-      return await tx.sale.create({
-        data: {
-          stockId,
-          quantity,
-          paymentMethod,
-          soldById: session.user.id,
-          branchId: userBranchId,
-        },
-        include: { stock: true },
-      });
+        await tx.stock.update({
+          where: { id: item.stockId },
+          data: { quantity: stock.quantity - item.quantity },
+        });
+
+        const createdSale = await tx.sale.create({
+          data: {
+            stockId: item.stockId,
+            quantity: item.quantity,
+            paymentMethod,
+            soldById: session.user.id,
+            branchId: userBranchId,
+          },
+          include: { stock: true },
+        });
+
+        saleRecords.push(createdSale);
+      }
+
+      return saleRecords;
     });
 
-    return Response.json(sale, { status: 201 });
+    return Response.json({ sales: result }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Sale failed" }, { status: 400 });
   }

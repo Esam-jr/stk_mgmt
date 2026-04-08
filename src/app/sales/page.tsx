@@ -63,6 +63,16 @@ export default function PosPage() {
     setCart(prev => prev.filter(i => i.id !== id));
   };
 
+  const updateCartQty = (id: string, nextQty: number) => {
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const safeQty = Number.isNaN(nextQty) ? 1 : Math.max(1, Math.min(nextQty, item.quantity));
+        return { ...item, cartQty: safeQty };
+      })
+    );
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0) return toast.error("Cart is empty");
     setIsProcessing(true);
@@ -75,13 +85,16 @@ export default function PosPage() {
         body: JSON.stringify({ items, paymentMethod }),
       });
       
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error || "Sale failed");
+      }
       toast.success("Sale completed successfully!");
       setCart([]);
       setSearchResults([]);
       setSearchQuery("");
     } catch (error) {
-      toast.error("Failed to process sale. Check available stock.");
+      toast.error(error instanceof Error ? error.message : "Failed to process sale.");
     } finally {
       setIsProcessing(false);
     }
@@ -127,7 +140,13 @@ export default function PosPage() {
                     <div className="mt-2 text-lg font-bold text-indigo-400">${item.sellingPrice.toFixed(2)}</div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="text-sm text-zinc-500">{item.quantity} in stock</span>
+                    <span
+                      className={`text-sm font-medium ${
+                        item.quantity > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {item.quantity > 0 ? `${item.quantity} available` : "Out of stock"}
+                    </span>
                     <Button 
                       size="sm" 
                       onClick={() => addToCart(item)}
@@ -158,7 +177,19 @@ export default function PosPage() {
               <div key={item.id} className="flex items-center justify-between rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
                 <div>
                   <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.category}</div>
-                  <div className="text-xs text-zinc-500">${item.sellingPrice.toFixed(2)} × {item.cartQty}</div>
+                  <div className="text-xs text-zinc-500">Barcode: {item.barcode} | Size: {item.size}</div>
+                  <div className="text-xs text-zinc-500">Unit Price: ${item.sellingPrice.toFixed(2)} | Available: {item.quantity}</div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <label className="text-xs text-zinc-600 dark:text-zinc-400">Qty</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={item.quantity}
+                      value={item.cartQty}
+                      onChange={(e) => updateCartQty(item.id, Number(e.target.value))}
+                      className="h-8 w-20"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">${(item.sellingPrice * item.cartQty).toFixed(2)}</span>
