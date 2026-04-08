@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Users, ShieldCheck, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { Branch } from "@prisma/client";
 
@@ -134,17 +134,48 @@ export default function UsersPage() {
     }
   ];
 
+  const salesCount = users.filter((u) => u.role === "SALES").length;
+  const adminCount = users.filter((u) => u.role === "MAIN_ADMIN" || u.role === "SUPER_ADMIN").length;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Device Users</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
+      <div className="rounded-2xl border border-zinc-200 bg-linear-to-br from-white to-zinc-100 p-5 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              <Users className="h-6 w-6 text-indigo-500" />
+              User Management
+            </h1>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Manage access, roles, and branch assignments for all users.
+            </p>
+          </div>
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Total Users</p>
+          <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{users.length}</p>
+        </div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Admins</p>
+          <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{adminCount}</p>
+        </div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">Sales Users</p>
+          <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{salesCount}</p>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
       ) : (
-        <DataTable columns={columns} data={users} />
+        <DataTable columns={columns} data={users} className="rounded-xl shadow-sm" />
       )}
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title={editingUserId ? "Edit User" : "Create New User"}>
@@ -196,6 +227,13 @@ export default function UsersPage() {
               </select>
             </div>
           )}
+
+          <div className="flex items-start gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/70">
+            <ShieldCheck className="mt-0.5 h-4 w-4 text-indigo-500" />
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              Roles define dashboard access. Sales users must be assigned to a branch.
+            </p>
+          </div>
 
           <div className="mt-6 flex justify-end gap-3">
             <Button variant="ghost" type="button" onClick={closeModal}>Cancel</Button>
