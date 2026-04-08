@@ -21,6 +21,19 @@ type Stock = {
 };
 
 type Branch = { id: string; name: string };
+type BranchStats = {
+  totalSkus: number;
+  totalUnits: number;
+  inventoryValue: number;
+  potentialRevenue: number;
+  lowStockCount: number;
+  salesRevenue30d: number;
+  salesProfit30d: number;
+  unitsSold30d: number;
+  salesUsersCount: number;
+  transferInCount: number;
+  transferOutCount: number;
+};
 
 export default function BranchStockPage() {
   const params = useParams<{ branchId: string }>();
@@ -31,6 +44,7 @@ export default function BranchStockPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [branchStats, setBranchStats] = useState<BranchStats | null>(null);
 
   const [formData, setFormData] = useState({
     category: "",
@@ -54,13 +68,18 @@ export default function BranchStockPage() {
   const fetchBranchData = async () => {
     setIsLoading(true);
     try {
-      const [stockRes, branchesRes] = await Promise.all([
+      const [stockRes, branchesRes, statsRes] = await Promise.all([
         fetch(`/api/stock?branchId=${branchId}`),
         fetch("/api/branches"),
+        fetch(`/api/branches/${branchId}/stats`),
       ]);
 
       if (stockRes.ok) setStocks(await stockRes.json());
       if (branchesRes.ok) setBranches(await branchesRes.json());
+      if (statsRes.ok) {
+        const payload = await statsRes.json();
+        setBranchStats(payload.stats);
+      }
     } catch (error) {
       toast.error("Failed to load branch stock");
     } finally {
@@ -130,7 +149,23 @@ export default function BranchStockPage() {
       {isLoading ? (
         <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
       ) : (
-        <DataTable columns={columns} data={stocks} />
+        <>
+          {branchStats && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <StatCard title="Total SKUs" value={branchStats.totalSkus.toLocaleString()} />
+              <StatCard title="Units In Stock" value={branchStats.totalUnits.toLocaleString()} />
+              <StatCard title="Inventory Value" value={`$${branchStats.inventoryValue.toFixed(2)}`} />
+              <StatCard title="Potential Revenue" value={`$${branchStats.potentialRevenue.toFixed(2)}`} />
+              <StatCard title="Low Stock Items" value={branchStats.lowStockCount.toLocaleString()} />
+              <StatCard title="30d Revenue" value={`$${branchStats.salesRevenue30d.toFixed(2)}`} />
+              <StatCard title="30d Profit" value={`$${branchStats.salesProfit30d.toFixed(2)}`} />
+              <StatCard title="30d Units Sold" value={branchStats.unitsSold30d.toLocaleString()} />
+              <StatCard title="Sales Users" value={branchStats.salesUsersCount.toLocaleString()} />
+              <StatCard title="Transfers (In/Out)" value={`${branchStats.transferInCount}/${branchStats.transferOutCount}`} />
+            </div>
+          )}
+          <DataTable columns={columns} data={stocks} />
+        </>
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Stock Item">
@@ -198,6 +233,15 @@ export default function BranchStockPage() {
           </div>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+function StatCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">{title}</p>
+      <p className="mt-1 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{value}</p>
     </div>
   );
 }
