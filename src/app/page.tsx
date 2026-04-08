@@ -15,8 +15,8 @@ export default function Home() {
         router.push("/login");
       } else {
         const role = (session.user as { role?: string }).role;
-        if (role === "SUPER_ADMIN") router.push("/super-admin/users");
-        else if (role === "MAIN_ADMIN") router.push("/main-admin/stock");
+        if (role === "SUPER_ADMIN") router.push("/super-admin/overview");
+        else if (role === "MAIN_ADMIN") router.push("/main-admin/overview");
         else if (role === "SALES") router.push("/sales");
         else router.push("/login"); // fallback
       }

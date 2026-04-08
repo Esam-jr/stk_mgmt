@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { 
+  LayoutDashboard,
   Users, 
   Building2, 
   ArrowRightLeft, 
@@ -25,6 +26,7 @@ type SidebarItem = {
 };
 
 const superAdminNav: SidebarItem[] = [
+  { name: "Overview", href: "/super-admin/overview", icon: LayoutDashboard },
   { name: "Users", href: "/super-admin/users", icon: Users },
   { name: "Branches", href: "/super-admin/branches", icon: Building2 },
   { name: "Transfer", href: "/super-admin/transfer", icon: ArrowRightLeft },
@@ -32,6 +34,7 @@ const superAdminNav: SidebarItem[] = [
 ];
 
 const mainAdminNav: SidebarItem[] = [
+  { name: "Overview", href: "/main-admin/overview", icon: LayoutDashboard },
   { name: "Stock", href: "/main-admin/stock", icon: Package },
   { name: "Transfer", href: "/main-admin/transfer", icon: ArrowRightLeft },
   { name: "Reports", href: "/main-admin/reports", icon: BarChart3 },
