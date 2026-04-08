@@ -92,10 +92,10 @@ export default function StockPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Stock Management</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Stock Management</h1>
         <div className="flex gap-4 items-center">
           <select 
-            className="h-10 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none focus:border-indigo-500"
+            className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             value={activeBranch}
             onChange={(e) => setActiveBranch(e.target.value)}
           >
@@ -107,7 +107,7 @@ export default function StockPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-zinc-400">Loading...</div>
+        <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
       ) : (
         <DataTable columns={columns} data={stocks} />
       )}
@@ -116,38 +116,38 @@ export default function StockPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Brand</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
               <Input required value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Category</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Category</label>
               <Input required value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Size</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Size</label>
               <Input required value={formData.size} onChange={e => setFormData({ ...formData, size: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Quantity</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Quantity</label>
               <Input type="number" required min={0} value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Buy Price</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Buy Price</label>
               <Input type="number" step="0.01" required min={0} value={formData.priceIn} onChange={e => setFormData({ ...formData, priceIn: parseFloat(e.target.value) })} />
             </div>
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Sell Price</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Sell Price</label>
               <Input type="number" step="0.01" required min={0} value={formData.sellingPrice} onChange={e => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) })} />
             </div>
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Assign to Branch</label>
+            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Assign to Branch</label>
             <select 
-              className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+              className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
               required
               value={formData.branchId} 
               onChange={e => setFormData({ ...formData, branchId: e.target.value })}

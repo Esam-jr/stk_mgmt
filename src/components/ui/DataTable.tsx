@@ -19,10 +19,10 @@ export function DataTable<T extends { id?: string | number }>({
   className,
 }: DataTableProps<T>) {
   return (
-    <div className={cn("overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/50 shadow", className)}>
+    <div className={cn("overflow-hidden rounded-lg border border-zinc-300 bg-white shadow dark:border-zinc-800 dark:bg-zinc-900/50", className)}>
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-zinc-300">
-          <thead className="bg-zinc-800/80 text-xs uppercase text-zinc-400">
+        <table className="w-full text-left text-sm text-zinc-700 dark:text-zinc-300">
+          <thead className="bg-zinc-200 text-xs uppercase text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400">
             <tr>
               {columns.map((col, i) => (
                 <th key={i} className="px-6 py-4 font-medium tracking-wider">
@@ -42,7 +42,7 @@ export function DataTable<T extends { id?: string | number }>({
               data.map((row, i) => (
                 <tr
                   key={row.id ?? i}
-                  className="border-b border-zinc-800/60 last:border-0 hover:bg-zinc-800/30 transition-colors"
+                  className="border-b border-zinc-300/70 transition-colors hover:bg-zinc-100 last:border-0 dark:border-zinc-800/60 dark:hover:bg-zinc-800/30"
                 >
                   {columns.map((col, j) => (
                     <td key={j} className="whitespace-nowrap px-6 py-4">

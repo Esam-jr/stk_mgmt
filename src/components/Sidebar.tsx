@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SidebarItem = {
   name: string;
@@ -68,8 +69,8 @@ export function Sidebar({ role }: { role: string }) {
   };
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-zinc-900 border-r border-zinc-800 text-zinc-300">
-      <div className="flex h-16 items-center gap-2 border-b border-zinc-800 px-6 font-semibold text-zinc-100 uppercase tracking-wider text-sm">
+    <div className="flex h-screen w-64 flex-col border-r border-zinc-300 bg-zinc-100 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+      <div className="flex h-16 items-center gap-2 border-b border-zinc-300 px-6 text-sm font-semibold uppercase tracking-wider text-zinc-800 dark:border-zinc-800 dark:text-zinc-100">
         <Boxes className="h-5 w-5 text-indigo-500" />
         Stock Mgmt
       </div>
@@ -84,13 +85,13 @@ export function Sidebar({ role }: { role: string }) {
               className={cn(
                 "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive 
-                  ? "bg-zinc-800 text-indigo-400" 
-                  : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100"
+                  ? "bg-zinc-200 text-indigo-600 dark:bg-zinc-800 dark:text-indigo-400"
+                  : "text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
               )}
             >
               <item.icon className={cn(
-                "mr-3 flex-shrink-0 h-5 w-5",
-                isActive ? "text-indigo-400" : "text-zinc-500 group-hover:text-zinc-300"
+                "mr-3 h-5 w-5 shrink-0",
+                isActive ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-500 dark:group-hover:text-zinc-300"
               )} />
               {item.name}
             </Link>
@@ -98,13 +99,16 @@ export function Sidebar({ role }: { role: string }) {
         })}
       </nav>
 
-      <div className="border-t border-zinc-800 p-4">
-        <div className="mb-4 px-2 text-xs uppercase text-zinc-500 tracking-wider font-semibold">
-          Role: <span className="text-zinc-300">{role.replace("_", " ")}</span>
+      <div className="border-t border-zinc-300 p-4 dark:border-zinc-800">
+        <div className="mb-4 flex items-center justify-between px-2">
+          <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Role: <span className="text-zinc-700 dark:text-zinc-300">{role.replace("_", " ")}</span>
+          </div>
+          <ThemeToggle />
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100 transition-colors"
+          className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
         >
           <LogOut className="mr-3 h-5 w-5 text-zinc-500" />
           Sign Out

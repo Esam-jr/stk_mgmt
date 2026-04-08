@@ -93,7 +93,7 @@ export default function PosPage() {
     <div className="grid grid-cols-3 gap-8 h-[calc(100vh-8rem)]">
       {/* Search & Results Section */}
       <div className="col-span-2 flex flex-col space-y-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
           <form onSubmit={handleSearch} className="flex gap-3 relative">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
@@ -110,20 +110,20 @@ export default function PosPage() {
           </form>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex-1 overflow-y-auto">
-          <h2 className="text-lg font-semibold text-white mb-4">Search Results</h2>
+        <div className="flex-1 overflow-y-auto rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">Search Results</h2>
           {searchResults.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">
+            <div className="py-12 text-center text-zinc-500">
               <PackageIcon className="mx-auto h-12 w-12 opacity-20 mb-3" />
               <p>Search for a product to begin</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {searchResults.map((item) => (
-                <div key={item.id} className="border border-zinc-800 bg-zinc-950 p-4 rounded-lg flex flex-col justify-between">
+                <div key={item.id} className="flex flex-col justify-between rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
                   <div>
-                    <h3 className="font-medium text-white">{item.brand} - {item.category}</h3>
-                    <p className="text-sm text-zinc-400">Size: {item.size} | Barcode: {item.barcode}</p>
+                    <h3 className="font-medium text-zinc-900 dark:text-white">{item.brand} - {item.category}</h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Size: {item.size} | Barcode: {item.barcode}</p>
                     <div className="mt-2 text-lg font-bold text-indigo-400">${item.sellingPrice.toFixed(2)}</div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
@@ -145,8 +145,8 @@ export default function PosPage() {
       </div>
 
       {/* Cart & Checkout Section */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+      <div className="flex flex-col rounded-xl border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-zinc-900 dark:text-white">
           <ShoppingCart className="h-5 w-5 text-indigo-400" /> Current Sale
         </h2>
         
@@ -155,13 +155,13 @@ export default function PosPage() {
             <p className="text-zinc-500 text-center mt-10">Cart is empty</p>
           ) : (
             cart.map((item) => (
-              <div key={item.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-md border border-zinc-800">
+              <div key={item.id} className="flex items-center justify-between rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
                 <div>
-                  <div className="font-medium text-zinc-200">{item.brand} {item.category}</div>
+                  <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.category}</div>
                   <div className="text-xs text-zinc-500">${item.sellingPrice.toFixed(2)} × {item.cartQty}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-zinc-100">${(item.sellingPrice * item.cartQty).toFixed(2)}</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">${(item.sellingPrice * item.cartQty).toFixed(2)}</span>
                   <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-300 text-xl leading-none">&times;</button>
                 </div>
               </div>
@@ -169,19 +169,19 @@ export default function PosPage() {
           )}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-zinc-800 space-y-4">
+        <div className="mt-6 space-y-4 border-t border-zinc-300 pt-6 dark:border-zinc-800">
           <div className="flex justify-between text-lg">
-            <span className="text-zinc-400">Total</span>
-            <span className="font-bold text-2xl text-white">${totalAmount.toFixed(2)}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">Total</span>
+            <span className="text-2xl font-bold text-zinc-900 dark:text-white">${totalAmount.toFixed(2)}</span>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-zinc-400">Payment Method</label>
+            <label className="text-sm text-zinc-600 dark:text-zinc-400">Payment Method</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 className={`flex items-center justify-center gap-2 py-3 rounded-md border transition-colors ${
-                  paymentMethod === "CASH" ? "bg-indigo-600/20 border-indigo-500 text-indigo-400 font-medium" : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                  paymentMethod === "CASH" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
                 }`}
                 onClick={() => setPaymentMethod("CASH")}
               >
@@ -190,7 +190,7 @@ export default function PosPage() {
               <button
                 type="button"
                 className={`flex items-center justify-center gap-2 py-3 rounded-md border transition-colors ${
-                  paymentMethod === "TRANSFER" ? "bg-indigo-600/20 border-indigo-500 text-indigo-400 font-medium" : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                  paymentMethod === "TRANSFER" ? "bg-indigo-600/20 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-medium" : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
                 }`}
                 onClick={() => setPaymentMethod("TRANSFER")}
               >

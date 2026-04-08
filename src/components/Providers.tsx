@@ -1,8 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = savedTheme === "dark" || savedTheme === "light"
+      ? savedTheme
+      : isSystemDark
+      ? "dark"
+      : "light";
+
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, []);
+
   return (
     <>
       {children}

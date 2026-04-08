@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import toast from "react-hot-toast";
 import { Boxes, Eye, EyeOff } from "lucide-react";
 
@@ -41,16 +42,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-100 p-4 dark:bg-zinc-950">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-300 bg-white p-8 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10">
             <Boxes className="h-6 w-6 text-indigo-500" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-white">
+          <h2 className="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
             Welcome back
           </h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Sign in to access your dashboard
           </p>
         </div>
@@ -58,7 +62,7 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-400">
+              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Email address
               </label>
               <Input
@@ -72,7 +76,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-400">
+              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Password
               </label>
               <div className="relative mt-1">
@@ -87,7 +91,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400 transition hover:text-zinc-200"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (

@@ -15,17 +15,17 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div 
+      <div
         className={cn(
-          "w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl transition-all",
+          "w-full max-w-md rounded-xl border border-zinc-300 bg-white shadow-2xl transition-all dark:border-zinc-800 dark:bg-zinc-900",
           className
         )}
       >
-        <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-          <h3 className="text-lg font-semibold text-zinc-100">{title}</h3>
+        <div className="flex items-center justify-between border-b border-zinc-300 px-6 py-4 dark:border-zinc-800">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
           <button
             onClick={onClose}
-            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+            className="rounded-md p-1 text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <X className="h-5 w-5" />
           </button>

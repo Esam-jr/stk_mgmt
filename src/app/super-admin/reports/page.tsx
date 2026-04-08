@@ -29,29 +29,29 @@ export default function ReportsPage() {
     }
   };
 
-  if (isLoading) return <div className="text-zinc-400">Loading dashbaord...</div>;
+  if (isLoading) return <div className="text-zinc-600 dark:text-zinc-400">Loading dashbaord...</div>;
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold tracking-tight text-white mb-6">Reports Dashboard</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Reports Dashboard</h1>
 
       <div className="grid grid-cols-3 gap-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-          <h3 className="text-zinc-400 text-sm font-medium">Total Inventory Value</h3>
-          <p className="text-2xl font-bold text-white mt-2">${stockSummary?.inventoryValue?.toFixed(2) || "0.00"}</p>
+        <div className="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Inventory Value</h3>
+          <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">${stockSummary?.inventoryValue?.toFixed(2) || "0.00"}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-          <h3 className="text-zinc-400 text-sm font-medium">Potential Revenue</h3>
-          <p className="text-2xl font-bold text-white mt-2">${stockSummary?.potentialRevenue?.toFixed(2) || "0.00"}</p>
+        <div className="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Potential Revenue</h3>
+          <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">${stockSummary?.potentialRevenue?.toFixed(2) || "0.00"}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-          <h3 className="text-zinc-400 text-sm font-medium">Low Stock Alerts</h3>
-          <p className="text-2xl font-bold text-red-500 mt-2">{stockSummary?.lowStockCount || 0} Items</p>
+        <div className="rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Low Stock Alerts</h3>
+          <p className="mt-2 text-2xl font-bold text-red-500">{stockSummary?.lowStockCount || 0} Items</p>
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 hidden md:block">
-        <h3 className="text-white font-semibold mb-6">Revenue & Profit (Last 30 Days)</h3>
+      <div className="hidden rounded-lg border border-zinc-300 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 md:block">
+        <h3 className="mb-6 font-semibold text-zinc-900 dark:text-white">Revenue & Profit (Last 30 Days)</h3>
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={salesData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>

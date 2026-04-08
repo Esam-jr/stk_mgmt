@@ -24,8 +24,8 @@ export default function Home() {
   }, [session, isPending, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-      <div className="flex flex-col items-center gap-4 text-zinc-400">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-100 dark:bg-zinc-950">
+      <div className="flex flex-col items-center gap-4 text-zinc-600 dark:text-zinc-400">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
         <p className="text-sm">Authenticating session...</p>
       </div>

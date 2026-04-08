@@ -117,7 +117,7 @@ export default function UsersPage() {
   const columns = [
     { header: "Name", cell: (u: User) => `${u.firstName} ${u.lastName}` },
     { header: "Email", accessorKey: "email" as keyof User },
-    { header: "Role", cell: (u: User) => <span className="px-2 py-1 bg-zinc-800 rounded text-xs">{u.role}</span> },
+    { header: "Role", cell: (u: User) => <span className="rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{u.role}</span> },
     { header: "Branch", cell: (u: User) => u.branch?.name || "All Branches" },
     {
       header: "Actions",
@@ -137,12 +137,12 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Device Users</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Device Users</h1>
         <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
       </div>
 
       {isLoading ? (
-        <div className="text-zinc-400">Loading...</div>
+        <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
       ) : (
         <DataTable columns={columns} data={users} />
       )}
@@ -151,26 +151,26 @@ export default function UsersPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">First Name</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">First Name</label>
               <Input required value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Last Name</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Last Name</label>
               <Input required value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} />
             </div>
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Email</label>
+            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Email</label>
             <Input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Password {editingUserId && "(Leave empty to keep)"}</label>
+            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Password {editingUserId && "(Leave empty to keep)"}</label>
             <Input type="password" required={!editingUserId} minLength={6} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-1 block">Role</label>
+            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Role</label>
             <select 
-              className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+              className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
               value={formData.role} 
               onChange={e => setFormData({ ...formData, role: e.target.value })}
             >
@@ -182,9 +182,9 @@ export default function UsersPage() {
           
           {formData.role === "SALES" && (
             <div>
-              <label className="text-sm text-zinc-400 mb-1 block">Branch Allocation</label>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Branch Allocation</label>
               <select 
-                className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+                className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
                 value={formData.branchId} 
                 onChange={e => setFormData({ ...formData, branchId: e.target.value })}
                 required={formData.role === "SALES"}
