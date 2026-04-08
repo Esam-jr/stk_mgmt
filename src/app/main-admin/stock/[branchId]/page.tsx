@@ -7,6 +7,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Stock = {
@@ -16,7 +17,10 @@ type Stock = {
   size: string;
   quantity: number;
   barcode: string;
+  priceIn: number;
   sellingPrice: number;
+  createdAt: string;
+  updatedAt: string;
   branch: { id: string; name: string };
 };
 
@@ -44,9 +48,21 @@ export default function BranchStockPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [activeStock, setActiveStock] = useState<Stock | null>(null);
   const [branchStats, setBranchStats] = useState<BranchStats | null>(null);
 
   const [formData, setFormData] = useState({
+    category: "",
+    brand: "",
+    size: "",
+    quantity: 0,
+    priceIn: 0,
+    sellingPrice: 0,
+  });
+  const [editFormData, setEditFormData] = useState({
     category: "",
     brand: "",
     size: "",
@@ -123,6 +139,62 @@ export default function BranchStockPage() {
     }
   };
 
+  const openDetails = (stock: Stock) => {
+    setActiveStock(stock);
+    setIsDetailsModalOpen(true);
+  };
+
+  const openEdit = (stock: Stock) => {
+    setActiveStock(stock);
+    setEditFormData({
+      category: stock.category,
+      brand: stock.brand,
+      size: stock.size,
+      quantity: stock.quantity,
+      priceIn: stock.priceIn,
+      sellingPrice: stock.sellingPrice,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeStock) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/stock/${activeStock.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editFormData),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Stock updated successfully");
+      setIsEditModalOpen(false);
+      setActiveStock(null);
+      fetchBranchData();
+    } catch (error) {
+      toast.error("Failed to update stock");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (stock: Stock) => {
+    const shouldDelete = window.confirm(`Delete ${stock.brand} ${stock.category} (${stock.size})?`);
+    if (!shouldDelete) return;
+    setIsDeletingId(stock.id);
+    try {
+      const res = await fetch(`/api/stock/${stock.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Stock deleted successfully");
+      fetchBranchData();
+    } catch (error) {
+      toast.error("Failed to delete stock");
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
   const columns = [
     { header: "Barcode", accessorKey: "barcode" as keyof Stock },
     { header: "Brand", accessorKey: "brand" as keyof Stock },
@@ -130,6 +202,28 @@ export default function BranchStockPage() {
     { header: "Size", accessorKey: "size" as keyof Stock },
     { header: "Qty", accessorKey: "quantity" as keyof Stock },
     { header: "Price", cell: (s: Stock) => `$${s.sellingPrice.toFixed(2)}` },
+    {
+      header: "Actions",
+      cell: (s: Stock) => (
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => openDetails(s)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(s)}
+            isLoading={isDeletingId === s.id}
+            disabled={isDeletingId === s.id}
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -232,6 +326,79 @@ export default function BranchStockPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setActiveStock(null);
+        }}
+        title="Edit Stock Item"
+      >
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
+              <Input required value={editFormData.brand} onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Category</label>
+              <Input required value={editFormData.category} onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Size</label>
+              <Input required value={editFormData.size} onChange={(e) => setEditFormData({ ...editFormData, size: e.target.value })} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Quantity</label>
+              <Input type="number" min={0} required value={editFormData.quantity} onChange={(e) => setEditFormData({ ...editFormData, quantity: Number(e.target.value) })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Buy Price</label>
+              <Input type="number" step="0.01" min={0} required value={editFormData.priceIn} onChange={(e) => setEditFormData({ ...editFormData, priceIn: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Sell Price</label>
+              <Input type="number" step="0.01" min={0} required value={editFormData.sellingPrice} onChange={(e) => setEditFormData({ ...editFormData, sellingPrice: Number(e.target.value) })} />
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isSubmitting}>
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setActiveStock(null);
+        }}
+        title="Stock Details"
+      >
+        {activeStock && (
+          <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
+            <div><span className="font-semibold">Barcode:</span> {activeStock.barcode}</div>
+            <div><span className="font-semibold">Brand:</span> {activeStock.brand}</div>
+            <div><span className="font-semibold">Category:</span> {activeStock.category}</div>
+            <div><span className="font-semibold">Size:</span> {activeStock.size}</div>
+            <div><span className="font-semibold">Quantity:</span> {activeStock.quantity}</div>
+            <div><span className="font-semibold">Buy Price:</span> ${activeStock.priceIn.toFixed(2)}</div>
+            <div><span className="font-semibold">Sell Price:</span> ${activeStock.sellingPrice.toFixed(2)}</div>
+            <div><span className="font-semibold">Created:</span> {new Date(activeStock.createdAt).toLocaleString()}</div>
+            <div><span className="font-semibold">Updated:</span> {new Date(activeStock.updatedAt).toLocaleString()}</div>
+          </div>
+        )}
       </Modal>
     </div>
   );
