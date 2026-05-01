@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard,
   Users, 
-  Building2, 
   ArrowRightLeft, 
   BarChart3, 
   Package, 
@@ -28,7 +27,6 @@ type SidebarItem = {
 const superAdminNav: SidebarItem[] = [
   { name: "Overview", href: "/super-admin/overview", icon: LayoutDashboard },
   { name: "Users", href: "/super-admin/users", icon: Users },
-  { name: "Branches", href: "/super-admin/branches", icon: Building2 },
   { name: "Stock", href: "/super-admin/stock", icon: Package },
   { name: "Transfer", href: "/super-admin/transfer", icon: ArrowRightLeft },
   { name: "Reports", href: "/super-admin/reports", icon: BarChart3 },
