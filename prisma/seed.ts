@@ -4,6 +4,21 @@ import { hashPassword } from 'better-auth/crypto'
 
 const prisma = new PrismaClient()
 
+const STORE_CATEGORIES = [
+  "Shoes",
+  "T-shirt",
+  "Shurab",
+  "Shemiz",
+  "Jacket",
+  "Coat",
+  "Jeans",
+  "Suit trousers",
+  "Tuta trousers",
+  "Khaki",
+  "Complete Tuta",
+  "Suits",
+]
+
 async function main() {
   console.log('Seeding database...')
 
@@ -73,37 +88,52 @@ async function main() {
   })
 
   // 3. Create Sample Stock
-  await prisma.stock.createMany({
-    data: [
-      {
-        category: 'T-Shirts',
-        brand: 'Nike',
-        size: 'M',
-        quantity: 100,
-        priceIn: 15.0,
-        sellingPrice: 35.0,
-        branchId: mainBranch.id,
+  const categories = await Promise.all(
+    STORE_CATEGORIES.map((name) =>
+      prisma.category.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      })
+    )
+  )
+
+  const tShirtCategory = categories.find((category) => category.name === "T-shirt")
+  const shoesCategory = categories.find((category) => category.name === "Shoes")
+  if (!tShirtCategory || !shoesCategory) throw new Error("Missing required seed categories")
+
+  const nikeTShirt = await prisma.product.create({
+    data: {
+      name: "Classic Tee",
+      brand: "Nike",
+      categoryId: tShirtCategory.id,
+      branchId: mainBranch.id,
+      priceIn: 15.0,
+      sellingPrice: 35.0,
+      variants: {
+        create: [
+          { size: "M", color: "Black", quantity: 100 },
+          { size: "L", color: "Black", quantity: 50 },
+        ],
       },
-      {
-        category: 'T-Shirts',
-        brand: 'Nike',
-        size: 'L',
-        quantity: 50,
-        priceIn: 15.0,
-        sellingPrice: 35.0,
-        branchId: mainBranch.id,
-      },
-      {
-        category: 'Shoes',
-        brand: 'Adidas',
-        size: '42',
-        quantity: 30,
-        priceIn: 45.0,
-        sellingPrice: 120.0,
-        branchId: branchB.id,
-      },
-    ],
+    },
   })
+
+  await prisma.product.create({
+    data: {
+      name: "Runner Shoe",
+      brand: "Adidas",
+      categoryId: shoesCategory.id,
+      branchId: branchB.id,
+      priceIn: 45.0,
+      sellingPrice: 120.0,
+      variants: {
+        create: [{ size: "42", color: "White", quantity: 30 }],
+      },
+    },
+  })
+
+  console.log(`Seeded product ${nikeTShirt.name} with variants`)
 
   console.log('Database seeded successfully')
 }

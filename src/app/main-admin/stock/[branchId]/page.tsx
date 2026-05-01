@@ -12,9 +12,13 @@ import toast from "react-hot-toast";
 
 type Stock = {
   id: string;
+  productId: string;
+  name: string;
   category: string;
+  categoryId: string;
   brand: string;
   size: string;
+  color?: string | null;
   quantity: number;
   barcode: string;
   priceIn: number;
@@ -25,6 +29,7 @@ type Stock = {
 };
 
 type Branch = { id: string; name: string };
+type Category = { id: string; name: string };
 type BranchStats = {
   totalSkus: number;
   totalUnits: number;
@@ -45,6 +50,7 @@ export default function BranchStockPage() {
 
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,17 +61,21 @@ export default function BranchStockPage() {
   const [branchStats, setBranchStats] = useState<BranchStats | null>(null);
 
   const [formData, setFormData] = useState({
-    category: "",
+    name: "",
+    categoryId: "",
     brand: "",
     size: "",
+    color: "",
     quantity: 0,
     priceIn: 0,
     sellingPrice: 0,
   });
   const [editFormData, setEditFormData] = useState({
-    category: "",
+    name: "",
+    categoryId: "",
     brand: "",
     size: "",
+    color: "",
     quantity: 0,
     priceIn: 0,
     sellingPrice: 0,
@@ -84,10 +94,11 @@ export default function BranchStockPage() {
   const fetchBranchData = async () => {
     setIsLoading(true);
     try {
-      const [stockRes, branchesRes, statsRes] = await Promise.all([
+      const [stockRes, branchesRes, statsRes, categoriesRes] = await Promise.all([
         fetch(`/api/stock?branchId=${branchId}`),
         fetch("/api/branches"),
         fetch(`/api/branches/${branchId}/stats`),
+        fetch("/api/categories"),
       ]);
 
       if (stockRes.ok) setStocks(await stockRes.json());
@@ -96,6 +107,7 @@ export default function BranchStockPage() {
         const payload = await statsRes.json();
         setBranchStats(payload.stats);
       }
+      if (categoriesRes.ok) setCategories(await categoriesRes.json());
     } catch (error) {
       toast.error("Failed to load branch stock");
     } finally {
@@ -114,9 +126,7 @@ export default function BranchStockPage() {
         body: JSON.stringify({
           ...formData,
           branchId,
-          quantity: Number(formData.quantity),
-          priceIn: Number(formData.priceIn),
-          sellingPrice: Number(formData.sellingPrice),
+          color: formData.color || null,
         }),
       });
 
@@ -124,9 +134,11 @@ export default function BranchStockPage() {
       toast.success("Stock created successfully");
       setIsModalOpen(false);
       setFormData({
-        category: "",
+        name: "",
+        categoryId: "",
         brand: "",
         size: "",
+        color: "",
         quantity: 0,
         priceIn: 0,
         sellingPrice: 0,
@@ -147,9 +159,11 @@ export default function BranchStockPage() {
   const openEdit = (stock: Stock) => {
     setActiveStock(stock);
     setEditFormData({
-      category: stock.category,
+      name: stock.name,
+      categoryId: stock.categoryId,
       brand: stock.brand,
       size: stock.size,
+      color: stock.color || "",
       quantity: stock.quantity,
       priceIn: stock.priceIn,
       sellingPrice: stock.sellingPrice,
@@ -180,7 +194,7 @@ export default function BranchStockPage() {
   };
 
   const handleDelete = async (stock: Stock) => {
-    const shouldDelete = window.confirm(`Delete ${stock.brand} ${stock.category} (${stock.size})?`);
+    const shouldDelete = window.confirm(`Delete ${stock.brand} ${stock.name} (${stock.size}${stock.color ? `/${stock.color}` : ""})?`);
     if (!shouldDelete) return;
     setIsDeletingId(stock.id);
     try {
@@ -197,9 +211,9 @@ export default function BranchStockPage() {
 
   const columns = [
     { header: "Barcode", accessorKey: "barcode" as keyof Stock },
-    { header: "Brand", accessorKey: "brand" as keyof Stock },
+    { header: "Product", cell: (s: Stock) => `${s.brand} - ${s.name}` },
     { header: "Category", accessorKey: "category" as keyof Stock },
-    { header: "Size", accessorKey: "size" as keyof Stock },
+    { header: "Variant", cell: (s: Stock) => `${s.size}${s.color ? ` / ${s.color}` : ""}` },
     { header: "Qty", accessorKey: "quantity" as keyof Stock },
     { header: "Price", cell: (s: Stock) => `$${s.sellingPrice.toFixed(2)}` },
     {
@@ -266,12 +280,34 @@ export default function BranchStockPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Product Name</label>
+              <Input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            </div>
+            <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
               <Input required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Category</label>
-              <Input required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} />
+              <select
+                className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                required
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              >
+                <option value="">Select category...</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Color (Optional)</label>
+              <Input value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} />
             </div>
           </div>
 
@@ -339,12 +375,34 @@ export default function BranchStockPage() {
         <form onSubmit={handleUpdate} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Product Name</label>
+              <Input required value={editFormData.name} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
+            </div>
+            <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
               <Input required value={editFormData.brand} onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })} />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Category</label>
-              <Input required value={editFormData.category} onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })} />
+              <select
+                className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                required
+                value={editFormData.categoryId}
+                onChange={(e) => setEditFormData({ ...editFormData, categoryId: e.target.value })}
+              >
+                <option value="">Select category...</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Color (Optional)</label>
+              <Input value={editFormData.color} onChange={(e) => setEditFormData({ ...editFormData, color: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -389,9 +447,10 @@ export default function BranchStockPage() {
         {activeStock && (
           <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
             <div><span className="font-semibold">Barcode:</span> {activeStock.barcode}</div>
+            <div><span className="font-semibold">Name:</span> {activeStock.name}</div>
             <div><span className="font-semibold">Brand:</span> {activeStock.brand}</div>
             <div><span className="font-semibold">Category:</span> {activeStock.category}</div>
-            <div><span className="font-semibold">Size:</span> {activeStock.size}</div>
+            <div><span className="font-semibold">Size:</span> {activeStock.size}{activeStock.color ? ` / ${activeStock.color}` : ""}</div>
             <div><span className="font-semibold">Quantity:</span> {activeStock.quantity}</div>
             <div><span className="font-semibold">Buy Price:</span> ${activeStock.priceIn.toFixed(2)}</div>
             <div><span className="font-semibold">Sell Price:</span> ${activeStock.sellingPrice.toFixed(2)}</div>

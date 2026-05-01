@@ -7,7 +7,7 @@ import { Search, ShoppingCart, CreditCard, Banknote } from "lucide-react";
 import toast from "react-hot-toast";
 
 type StockItem = {
-  id: string; barcode: string; brand: string; category: string; size: string;
+  id: string; barcode: string; name: string; brand: string; category: string; size: string; color?: string | null;
   quantity: number; sellingPrice: number;
 };
 type CartItem = StockItem & { cartQty: number };
@@ -78,7 +78,7 @@ export default function PosPage() {
     setIsProcessing(true);
     
     try {
-      const items = cart.map(item => ({ stockId: item.id, quantity: item.cartQty }));
+      const items = cart.map(item => ({ productVariantId: item.id, quantity: item.cartQty }));
       const res = await fetch("/api/sales", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,7 +132,7 @@ export default function PosPage() {
                 <Input
                   autoFocus
                   type="text"
-                  placeholder="Search by Barcode, Category, Brand..."
+                  placeholder="Search by barcode, product, category, brand..."
                   className="h-12 pl-10 text-base"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -154,8 +154,9 @@ export default function PosPage() {
                 {searchResults.map((item) => (
                   <div key={item.id} className="flex flex-col justify-between rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
                     <div>
-                      <h3 className="font-medium text-zinc-900 dark:text-white">{item.brand} - {item.category}</h3>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Size: {item.size} | Barcode: {item.barcode}</p>
+                      <h3 className="font-medium text-zinc-900 dark:text-white">{item.brand} - {item.name}</h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Category: {item.category} | Size: {item.size}{item.color ? ` | Color: ${item.color}` : ""}</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Barcode: {item.barcode}</p>
                       <div className="mt-2 text-lg font-bold text-indigo-400">${item.sellingPrice.toFixed(2)}</div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
@@ -195,8 +196,8 @@ export default function PosPage() {
               cart.map((item) => (
                 <div key={item.id} className="flex items-center justify-between rounded-md border border-zinc-300 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
                   <div>
-                    <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.category}</div>
-                    <div className="text-xs text-zinc-500">Barcode: {item.barcode} | Size: {item.size}</div>
+                    <div className="font-medium text-zinc-800 dark:text-zinc-200">{item.brand} {item.name}</div>
+                    <div className="text-xs text-zinc-500">Barcode: {item.barcode} | Size: {item.size}{item.color ? ` | Color: ${item.color}` : ""}</div>
                     <div className="text-xs text-zinc-500">Unit Price: ${item.sellingPrice.toFixed(2)} | Available: {item.quantity}</div>
                     <div className="mt-2 flex items-center gap-2">
                       <label className="text-xs text-zinc-600 dark:text-zinc-400">Qty</label>

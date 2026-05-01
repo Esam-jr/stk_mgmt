@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 
 const transferSchema = z.object({
-  stockId: z.string().min(1),
+  productVariantId: z.string().min(1),
   toBranchId: z.string().min(1),
   quantity: z.number().int().min(1),
 });
@@ -19,7 +19,13 @@ export async function GET(request: NextRequest) {
 
   const transfers = await prisma.stockTransfer.findMany({
     include: {
-      stock: true,
+      productVariant: {
+        include: {
+          product: {
+            include: { category: true },
+          },
+        },
+      },
       fromBranch: true,
       toBranch: true,
       transferredBy: { select: { id: true, firstName: true, lastName: true } },
@@ -42,61 +48,97 @@ export async function POST(request: NextRequest) {
   const parsed = transferSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { stockId, toBranchId, quantity } = parsed.data;
+  const { productVariantId, toBranchId, quantity } = parsed.data;
 
   try {
     const transfer = await prisma.$transaction(async (tx: any) => {
-      const sourceStock = await tx.stock.findUnique({ where: { id: stockId } });
-      if (!sourceStock) throw new Error("Stock not found");
-      if (sourceStock.quantity < quantity) throw new Error("Insufficient stock for transfer");
-      if (sourceStock.branchId === toBranchId) throw new Error("Cannot transfer to the same branch");
+      const sourceVariant = await tx.productVariant.findUnique({
+        where: { id: productVariantId },
+        include: { product: true },
+      });
+      if (!sourceVariant) throw new Error("Variant not found");
+      if (sourceVariant.quantity < quantity) throw new Error("Insufficient stock for transfer");
+      if (sourceVariant.product.branchId === toBranchId) throw new Error("Cannot transfer to the same branch");
 
       // Decrement source
-      await tx.stock.update({
-        where: { id: stockId },
-        data: { quantity: sourceStock.quantity - quantity },
+      await tx.productVariant.update({
+        where: { id: productVariantId },
+        data: { quantity: sourceVariant.quantity - quantity },
       });
 
-      // Find or create identical stock in target branch
-        const targetStock = await tx.stock.findFirst({
-          where: {
-            category: sourceStock.category,
-            brand: sourceStock.brand,
-            size: sourceStock.size,
-            branchId: toBranchId,
-          },
-        });
+      // Find or create product in target branch
+      let targetProduct = await tx.product.findFirst({
+        where: {
+          name: sourceVariant.product.name,
+          brand: sourceVariant.product.brand,
+          categoryId: sourceVariant.product.categoryId,
+          branchId: toBranchId,
+          priceIn: sourceVariant.product.priceIn,
+          sellingPrice: sourceVariant.product.sellingPrice,
+        },
+      });
 
-        if (targetStock) {
-          await tx.stock.update({
-            where: { id: targetStock.id },
-            data: { quantity: targetStock.quantity + quantity },
-          });
-        } else {
-          await tx.stock.create({
-            data: {
-              category: sourceStock.category,
-              brand: sourceStock.brand,
-              size: sourceStock.size,
-              barcode: crypto.randomUUID(), // New barcode for target branch if it doesn't exist
-              priceIn: sourceStock.priceIn,
-              sellingPrice: sourceStock.sellingPrice,
-              quantity: quantity,
-              branchId: toBranchId,
-            },
-          });
-        }
-
-        // Record transfer
-        return await tx.stockTransfer.create({
+      if (!targetProduct) {
+        targetProduct = await tx.product.create({
           data: {
-            stockId,
-            fromBranchId: sourceStock.branchId,
-            toBranchId,
-            quantity,
-            transferredById: session.user.id,
+            name: sourceVariant.product.name,
+            brand: sourceVariant.product.brand,
+            categoryId: sourceVariant.product.categoryId,
+            branchId: toBranchId,
+            priceIn: sourceVariant.product.priceIn,
+            sellingPrice: sourceVariant.product.sellingPrice,
           },
         });
+      }
+
+      // Find or create matching variant in target branch product.
+      const targetVariant = await tx.productVariant.findFirst({
+        where: {
+          productId: targetProduct.id,
+          size: sourceVariant.size,
+          color: sourceVariant.color,
+        },
+      });
+
+      if (targetVariant) {
+        await tx.productVariant.update({
+          where: { id: targetVariant.id },
+          data: { quantity: targetVariant.quantity + quantity },
+        });
+      } else {
+        await tx.productVariant.create({
+          data: {
+            productId: targetProduct.id,
+            size: sourceVariant.size,
+            color: sourceVariant.color,
+            quantity,
+            barcode: crypto.randomUUID(),
+          },
+        });
+      }
+
+      // Record transfer
+      return await tx.stockTransfer.create({
+        data: {
+          productVariantId,
+          fromBranchId: sourceVariant.product.branchId,
+          toBranchId,
+          quantity,
+          transferredById: session.user.id,
+        },
+        include: {
+          productVariant: {
+            include: {
+              product: {
+                include: { category: true },
+              },
+            },
+          },
+          fromBranch: true,
+          toBranch: true,
+          transferredBy: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
       });
 
       return Response.json(transfer, { status: 201 });

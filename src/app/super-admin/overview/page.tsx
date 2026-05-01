@@ -92,7 +92,7 @@ export default function SuperAdminOverviewPage() {
         </h2>
         <div className="flex flex-wrap gap-2">
           <Action href="/super-admin/users" label="Manage Users" />
-          <Action href="/super-admin/branches" label="Manage Branches" />
+          <Action href="/super-admin/stock" label="Manage Stock" />
           <Action href="/super-admin/transfer" label="Manage Transfers" />
           <Action href="/super-admin/reports" label="Open Reports" />
         </div>

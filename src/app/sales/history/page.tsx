@@ -12,13 +12,17 @@ type SaleRecord = {
   quantity: number;
   paymentMethod: "CASH" | "TRANSFER";
   createdAt: string;
-  stock: {
+  productVariant: {
     id: string;
     barcode: string;
-    brand: string;
-    category: string;
     size: string;
-    sellingPrice: number;
+    color?: string | null;
+    product: {
+      name: string;
+      brand: string;
+      category: { name: string };
+      sellingPrice: number;
+    };
   };
   soldBy: { id: string; firstName: string; lastName: string };
   branch: { id: string; name: string };
@@ -60,18 +64,18 @@ export default function SalesHistoryPage() {
   }, [salesHistory, fromDate, toDate]);
 
   const totalSalesAmount = filteredHistory.reduce(
-    (acc, sale) => acc + sale.stock.sellingPrice * sale.quantity,
+    (acc, sale) => acc + sale.productVariant.product.sellingPrice * sale.quantity,
     0
   );
   const totalUnits = filteredHistory.reduce((acc, sale) => acc + sale.quantity, 0);
 
   const columns = [
     { header: "Date", cell: (sale: SaleRecord) => new Date(sale.createdAt).toLocaleString() },
-    { header: "Product", cell: (sale: SaleRecord) => `${sale.stock.brand} - ${sale.stock.category} (${sale.stock.size})` },
-    { header: "Barcode", cell: (sale: SaleRecord) => sale.stock.barcode },
+    { header: "Product", cell: (sale: SaleRecord) => `${sale.productVariant.product.brand} - ${sale.productVariant.product.name} (${sale.productVariant.size}${sale.productVariant.color ? ` / ${sale.productVariant.color}` : ""})` },
+    { header: "Barcode", cell: (sale: SaleRecord) => sale.productVariant.barcode },
     { header: "Qty", accessorKey: "quantity" as keyof SaleRecord },
-    { header: "Unit Price", cell: (sale: SaleRecord) => `$${sale.stock.sellingPrice.toFixed(2)}` },
-    { header: "Total", cell: (sale: SaleRecord) => `$${(sale.quantity * sale.stock.sellingPrice).toFixed(2)}` },
+    { header: "Unit Price", cell: (sale: SaleRecord) => `$${sale.productVariant.product.sellingPrice.toFixed(2)}` },
+    { header: "Total", cell: (sale: SaleRecord) => `$${(sale.quantity * sale.productVariant.product.sellingPrice).toFixed(2)}` },
     { header: "Payment", accessorKey: "paymentMethod" as keyof SaleRecord },
     { header: "Branch", cell: (sale: SaleRecord) => sale.branch.name },
   ];

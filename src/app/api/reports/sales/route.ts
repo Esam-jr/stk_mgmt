@@ -28,7 +28,13 @@ export async function GET(request: NextRequest) {
       createdAt: { gte: thirtyDaysAgo },
       ...(filterBranchId ? { branchId: filterBranchId } : {}),
     },
-    include: { stock: true },
+    include: {
+      productVariant: {
+        include: {
+          product: true,
+        },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 
@@ -38,8 +44,8 @@ export async function GET(request: NextRequest) {
     if (!acc[date]) {
       acc[date] = { date, revenue: 0, profit: 0, count: 0 };
     }
-    const currentRevenue = sale.stock.sellingPrice * sale.quantity;
-    const currentCost = sale.stock.priceIn * sale.quantity;
+    const currentRevenue = Number(sale.productVariant.product.sellingPrice) * sale.quantity;
+    const currentCost = Number(sale.productVariant.product.priceIn) * sale.quantity;
     acc[date].revenue += currentRevenue;
     acc[date].profit += (currentRevenue - currentCost);
     acc[date].count += sale.quantity;

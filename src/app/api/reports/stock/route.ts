@@ -17,18 +17,36 @@ export async function GET(request: NextRequest) {
 
   const filterBranchId = role === "MAIN_ADMIN" && userBranchId ? userBranchId : branchId;
 
-  const stocks = await prisma.stock.findMany({
-    where: filterBranchId ? { branchId: filterBranchId } : undefined,
-    include: { branch: true },
+  const variants = await prisma.productVariant.findMany({
+    where: filterBranchId ? { product: { branchId: filterBranchId } } : undefined,
+    include: {
+      product: {
+        include: { branch: true, category: true },
+      },
+    },
   });
 
   // Calculate total valuation
-  const inventoryValue = stocks.reduce((acc: any, stock: any) => acc + (stock.priceIn * stock.quantity), 0);
-  const potentialRevenue = stocks.reduce((acc: any, stock: any) => acc + (stock.sellingPrice * stock.quantity), 0);
-  const lowStockCount = stocks.filter((stock: any) => stock.quantity < 10).length;
+  const inventoryValue = variants.reduce((acc: number, item) => acc + (Number(item.product.priceIn) * item.quantity), 0);
+  const potentialRevenue = variants.reduce((acc: number, item) => acc + (Number(item.product.sellingPrice) * item.quantity), 0);
+  const lowStockCount = variants.filter((item) => item.quantity < 10).length;
+  const stocks = variants.map((variant) => ({
+    id: variant.id,
+    productId: variant.productId,
+    name: variant.product.name,
+    brand: variant.product.brand,
+    category: variant.product.category.name,
+    size: variant.size,
+    color: variant.color,
+    barcode: variant.barcode,
+    quantity: variant.quantity,
+    priceIn: Number(variant.product.priceIn),
+    sellingPrice: Number(variant.product.sellingPrice),
+    branch: variant.product.branch,
+  }));
 
   return Response.json({
-    totalItems: stocks.length,
+    totalItems: variants.length,
     inventoryValue,
     potentialRevenue,
     lowStockCount,

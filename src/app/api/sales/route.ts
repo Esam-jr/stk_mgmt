@@ -7,7 +7,7 @@ const saleSchema = z.object({
   paymentMethod: z.enum(["CASH", "TRANSFER"]),
   items: z.array(
     z.object({
-      stockId: z.string().min(1),
+      productVariantId: z.string().min(1),
       quantity: z.number().int().min(1),
     })
   ).min(1),
@@ -34,7 +34,13 @@ export async function GET(request: NextRequest) {
   const sales = await prisma.sale.findMany({
     where,
     include: {
-      stock: true,
+      productVariant: {
+        include: {
+          product: {
+            include: { category: true },
+          },
+        },
+      },
       soldBy: { select: { id: true, firstName: true, lastName: true } },
       branch: true,
     },
@@ -70,27 +76,38 @@ export async function POST(request: NextRequest) {
       const saleRecords: any[] = [];
 
       for (const item of items) {
-        const stock = await tx.stock.findUnique({ where: { id: item.stockId } });
-        if (!stock) throw new Error("Stock not found");
-        if (stock.branchId !== userBranchId) throw new Error("Stock is not in your branch");
-        if (stock.quantity < item.quantity) {
-          throw new Error(`Insufficient stock for ${stock.brand} ${stock.category} (${stock.size})`);
+        const variant = await tx.productVariant.findUnique({
+          where: { id: item.productVariantId },
+          include: { product: true },
+        });
+        if (!variant) throw new Error("Variant not found");
+        if (variant.product.branchId !== userBranchId) throw new Error("Item is not in your branch");
+        if (variant.quantity < item.quantity) {
+          throw new Error(`Insufficient stock for ${variant.product.brand} ${variant.product.name} (${variant.size})`);
         }
 
-        await tx.stock.update({
-          where: { id: item.stockId },
-          data: { quantity: stock.quantity - item.quantity },
+        await tx.productVariant.update({
+          where: { id: item.productVariantId },
+          data: { quantity: variant.quantity - item.quantity },
         });
 
         const createdSale = await tx.sale.create({
           data: {
-            stockId: item.stockId,
+            productVariantId: item.productVariantId,
             quantity: item.quantity,
             paymentMethod,
             soldById: session.user.id,
             branchId: userBranchId,
           },
-          include: { stock: true },
+          include: {
+            productVariant: {
+              include: {
+                product: {
+                  include: { category: true },
+                },
+              },
+            },
+          },
         });
 
         saleRecords.push(createdSale);

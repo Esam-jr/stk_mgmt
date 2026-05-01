@@ -21,17 +21,21 @@ export async function GET(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [branch, stocks, salesLast30Days, salesUsersCount, transferInCount, transferOutCount] = await Promise.all([
+  const [branch, variants, salesLast30Days, salesUsersCount, transferInCount, transferOutCount] = await Promise.all([
     prisma.branch.findUnique({
       where: { id: branchId },
       select: { id: true, name: true, location: true },
     }),
-    prisma.stock.findMany({
-      where: { branchId },
+    prisma.productVariant.findMany({
+      where: { product: { branchId } },
       select: {
         quantity: true,
-        priceIn: true,
-        sellingPrice: true,
+        product: {
+          select: {
+            priceIn: true,
+            sellingPrice: true,
+          },
+        },
       },
     }),
     prisma.sale.findMany({
@@ -42,10 +46,14 @@ export async function GET(
         },
       },
       include: {
-        stock: {
+        productVariant: {
           select: {
-            priceIn: true,
-            sellingPrice: true,
+            product: {
+              select: {
+                priceIn: true,
+                sellingPrice: true,
+              },
+            },
           },
         },
       },
@@ -62,18 +70,18 @@ export async function GET(
 
   if (!branch) return Response.json({ error: "Branch not found" }, { status: 404 });
 
-  const totalSkus = stocks.length;
-  const totalUnits = stocks.reduce((acc, stock) => acc + stock.quantity, 0);
-  const inventoryValue = stocks.reduce((acc, stock) => acc + stock.quantity * stock.priceIn, 0);
-  const potentialRevenue = stocks.reduce((acc, stock) => acc + stock.quantity * stock.sellingPrice, 0);
-  const lowStockCount = stocks.filter((stock) => stock.quantity < 10).length;
+  const totalSkus = variants.length;
+  const totalUnits = variants.reduce((acc, item) => acc + item.quantity, 0);
+  const inventoryValue = variants.reduce((acc, item) => acc + item.quantity * Number(item.product.priceIn), 0);
+  const potentialRevenue = variants.reduce((acc, item) => acc + item.quantity * Number(item.product.sellingPrice), 0);
+  const lowStockCount = variants.filter((item) => item.quantity < 10).length;
 
   const salesRevenue30d = salesLast30Days.reduce(
-    (acc, sale) => acc + sale.quantity * sale.stock.sellingPrice,
+    (acc, sale) => acc + sale.quantity * Number(sale.productVariant.product.sellingPrice),
     0
   );
   const salesProfit30d = salesLast30Days.reduce(
-    (acc, sale) => acc + sale.quantity * (sale.stock.sellingPrice - sale.stock.priceIn),
+    (acc, sale) => acc + sale.quantity * (Number(sale.productVariant.product.sellingPrice) - Number(sale.productVariant.product.priceIn)),
     0
   );
   const unitsSold30d = salesLast30Days.reduce((acc, sale) => acc + sale.quantity, 0);

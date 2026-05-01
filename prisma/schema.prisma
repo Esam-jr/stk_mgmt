@@ -20,6 +20,15 @@ enum PaymentMethod {
   TRANSFER
 }
 
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
 model User {
   id        String   @id @default(cuid())
   firstName String
@@ -46,34 +55,52 @@ model Branch {
   updatedAt DateTime @updatedAt
 
   users      User[]
-  stocks     Stock[]
+  products    Product[]
   salesFrom  Sale[]
   transfersFrom StockTransfer[] @relation("TransferFrom")
   transfersTo   StockTransfer[] @relation("TransferTo")
 }
 
-model Stock {
-  id           String   @id @default(cuid())
-  category     String
+model Product {
+  id           String           @id @default(cuid())
+  name         String
   brand        String
-  size         String
-  quantity     Int      @default(0)
-  barcode      String   @unique @default(cuid())
-  priceIn      Float
-  sellingPrice Float
+  categoryId   String
+  category     Category         @relation(fields: [categoryId], references: [id])
   branchId     String
-  branch       Branch   @relation(fields: [branchId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  branch       Branch           @relation(fields: [branchId], references: [id])
+  priceIn      Decimal          @db.Decimal(12, 2)
+  sellingPrice Decimal          @db.Decimal(12, 2)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-  sales     Sale[]
-  transfers StockTransfer[]
+  variants     ProductVariant[]
+
+  @@index([branchId, categoryId])
+}
+
+model ProductVariant {
+  id         String          @id @default(cuid())
+  productId  String
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size       String
+  color      String?
+  quantity   Int             @default(0)
+  barcode    String          @unique @default(cuid())
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  sales      Sale[]
+  transfers  StockTransfer[]
+
+  @@unique([productId, size, color])
+  @@index([size, color])
 }
 
 model Sale {
   id            String        @id @default(cuid())
-  stockId       String
-  stock         Stock         @relation(fields: [stockId], references: [id])
+  productVariantId String
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
   quantity      Int
   paymentMethod PaymentMethod
   soldById      String
@@ -85,8 +112,8 @@ model Sale {
 
 model StockTransfer {
   id             String   @id @default(cuid())
-  stockId        String
-  stock          Stock    @relation(fields: [stockId], references: [id])
+  productVariantId String
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
   fromBranchId   String
   fromBranch     Branch   @relation("TransferFrom", fields: [fromBranchId], references: [id])
   toBranchId     String

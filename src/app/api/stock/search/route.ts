@@ -13,22 +13,42 @@ export async function GET(request: NextRequest) {
   const branchId = searchParams.get("branchId");
   const effectiveBranchId = role === "SALES" ? userBranchId : branchId;
 
-  const stocks = await prisma.stock.findMany({
+  const variants = await prisma.productVariant.findMany({
     where: {
       AND: [
-        effectiveBranchId ? { branchId: effectiveBranchId } : {},
+        effectiveBranchId ? { product: { branchId: effectiveBranchId } } : {},
         {
           OR: [
-            { brand: { contains: query, mode: "insensitive" } },
-            { category: { contains: query, mode: "insensitive" } },
+            { product: { brand: { contains: query, mode: "insensitive" } } },
+            { product: { name: { contains: query, mode: "insensitive" } } },
+            { product: { category: { name: { contains: query, mode: "insensitive" } } } },
             { barcode: { contains: query, mode: "insensitive" } },
             { size: { contains: query, mode: "insensitive" } },
+            { color: { contains: query, mode: "insensitive" } },
           ],
         },
       ],
     },
-    include: { branch: true },
+    include: {
+      product: { include: { category: true, branch: true } },
+    },
     take: 20,
   });
-  return Response.json(stocks);
+
+  return Response.json(
+    variants.map((variant) => ({
+      id: variant.id,
+      productId: variant.productId,
+      name: variant.product.name,
+      brand: variant.product.brand,
+      category: variant.product.category.name,
+      size: variant.size,
+      color: variant.color,
+      barcode: variant.barcode,
+      quantity: variant.quantity,
+      sellingPrice: Number(variant.product.sellingPrice),
+      priceIn: Number(variant.product.priceIn),
+      branch: variant.product.branch,
+    }))
+  );
 }

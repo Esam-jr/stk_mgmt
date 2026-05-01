@@ -9,7 +9,12 @@ import toast from "react-hot-toast";
 
 type Transfer = {
   id: string;
-  stock: { category: string; brand: string; size: string; barcode: string };
+  productVariant: {
+    barcode: string;
+    size: string;
+    color?: string | null;
+    product: { name: string; brand: string; category: { name: string } };
+  };
   fromBranch: { id: string; name: string };
   toBranch: { id: string; name: string };
   quantity: number;
@@ -20,9 +25,11 @@ type Transfer = {
 type Branch = { id: string; name: string };
 type Stock = {
   id: string;
+  name: string;
   brand: string;
   category: string;
   size: string;
+  color?: string | null;
   quantity: number;
   branch: { id: string; name: string };
 };
@@ -36,7 +43,7 @@ export default function StockTransferPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    stockId: "",
+    productVariantId: "",
     toBranchId: "",
     quantity: 1,
   });
@@ -64,7 +71,7 @@ export default function StockTransferPage() {
     }
   };
 
-  const selectedStock = stocks.find((stock) => stock.id === formData.stockId);
+  const selectedStock = stocks.find((stock) => stock.id === formData.productVariantId);
   const targetBranches = selectedStock
     ? branches.filter((branch) => branch.id !== selectedStock.branch.id)
     : branches;
@@ -77,7 +84,7 @@ export default function StockTransferPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          stockId: formData.stockId,
+          productVariantId: formData.productVariantId,
           toBranchId: formData.toBranchId,
           quantity: Number(formData.quantity),
         }),
@@ -90,7 +97,7 @@ export default function StockTransferPage() {
 
       toast.success("Transfer completed successfully");
       setIsModalOpen(false);
-      setFormData({ stockId: "", toBranchId: "", quantity: 1 });
+      setFormData({ productVariantId: "", toBranchId: "", quantity: 1 });
       fetchData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Transfer failed");
@@ -101,7 +108,7 @@ export default function StockTransferPage() {
 
   const columns = [
     { header: "Date", cell: (t: Transfer) => new Date(t.createdAt).toLocaleDateString() },
-    { header: "Item", cell: (t: Transfer) => `${t.stock.brand} - ${t.stock.category} (${t.stock.size})` },
+    { header: "Item", cell: (t: Transfer) => `${t.productVariant.product.brand} - ${t.productVariant.product.name} (${t.productVariant.size}${t.productVariant.color ? ` / ${t.productVariant.color}` : ""})` },
     { header: "From", cell: (t: Transfer) => t.fromBranch.name },
     { header: "To", cell: (t: Transfer) => t.toBranch.name },
     { header: "Quantity", accessorKey: "quantity" as keyof Transfer },
@@ -127,8 +134,8 @@ export default function StockTransferPage() {
             <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Stock Item</label>
             <select
               className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-              value={formData.stockId}
-              onChange={(e) => setFormData({ stockId: e.target.value, toBranchId: "", quantity: 1 })}
+              value={formData.productVariantId}
+              onChange={(e) => setFormData({ productVariantId: e.target.value, toBranchId: "", quantity: 1 })}
               required
             >
               <option value="">Select stock item...</option>
@@ -136,7 +143,7 @@ export default function StockTransferPage() {
                 .filter((stock) => stock.quantity > 0)
                 .map((stock) => (
                   <option key={stock.id} value={stock.id}>
-                    {stock.brand} - {stock.category} ({stock.size}) | {stock.branch.name} | Qty: {stock.quantity}
+                    {stock.brand} - {stock.name} ({stock.size}{stock.color ? `/${stock.color}` : ""}) | {stock.branch.name} | Qty: {stock.quantity}
                   </option>
                 ))}
             </select>
@@ -149,7 +156,7 @@ export default function StockTransferPage() {
               value={formData.toBranchId}
               onChange={(e) => setFormData({ ...formData, toBranchId: e.target.value })}
               required
-              disabled={!formData.stockId}
+              disabled={!formData.productVariantId}
             >
               <option value="">Select destination...</option>
               {targetBranches.map((branch) => (
@@ -184,7 +191,7 @@ export default function StockTransferPage() {
             <Button
               type="submit"
               isLoading={isSubmitting}
-              disabled={!formData.stockId || !formData.toBranchId || formData.quantity < 1}
+              disabled={!formData.productVariantId || !formData.toBranchId || formData.quantity < 1}
             >
               Transfer
             </Button>

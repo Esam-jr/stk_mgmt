@@ -4,13 +4,16 @@ import { auth } from "@/lib/auth";
 import { z } from "zod";
 
 const stockSchema = z.object({
-  category: z.string().min(1),
+  name: z.string().min(1),
   brand: z.string().min(1),
+  categoryId: z.string().min(1),
   size: z.string().min(1),
-  quantity: z.number().int().min(0),
-  priceIn: z.number().positive(),
-  sellingPrice: z.number().positive(),
+  color: z.string().optional().nullable(),
+  quantity: z.coerce.number().int().min(0),
+  priceIn: z.coerce.number().positive(),
+  sellingPrice: z.coerce.number().positive(),
   branchId: z.string().min(1),
+  barcode: z.string().optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
@@ -20,11 +23,35 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const branchId = searchParams.get("branchId");
 
-  const stocks = await prisma.stock.findMany({
-    where: branchId ? { branchId } : undefined,
-    include: { branch: true },
+  const variants = await prisma.productVariant.findMany({
+    where: branchId ? { product: { branchId } } : undefined,
+    include: {
+      product: {
+        include: { category: true, branch: true },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
+
+  const stocks = variants.map((variant) => ({
+    id: variant.id,
+    productId: variant.productId,
+    name: variant.product.name,
+    brand: variant.product.brand,
+    category: variant.product.category.name,
+    categoryId: variant.product.categoryId,
+    size: variant.size,
+    color: variant.color,
+    quantity: variant.quantity,
+    barcode: variant.barcode,
+    priceIn: Number(variant.product.priceIn),
+    sellingPrice: Number(variant.product.sellingPrice),
+    branchId: variant.product.branchId,
+    branch: variant.product.branch,
+    createdAt: variant.createdAt,
+    updatedAt: variant.updatedAt,
+  }));
+
   return Response.json(stocks);
 }
 
@@ -40,6 +67,65 @@ export async function POST(request: NextRequest) {
   const parsed = stockSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const stock = await prisma.stock.create({ data: parsed.data, include: { branch: true } });
+  const stock = await prisma.$transaction(async (tx) => {
+    const product = await tx.product.findFirst({
+      where: {
+        name: parsed.data.name,
+        brand: parsed.data.brand,
+        categoryId: parsed.data.categoryId,
+        branchId: parsed.data.branchId,
+        priceIn: parsed.data.priceIn,
+        sellingPrice: parsed.data.sellingPrice,
+      },
+    });
+
+    const productRecord =
+      product ??
+      (await tx.product.create({
+        data: {
+          name: parsed.data.name,
+          brand: parsed.data.brand,
+          categoryId: parsed.data.categoryId,
+          branchId: parsed.data.branchId,
+          priceIn: parsed.data.priceIn,
+          sellingPrice: parsed.data.sellingPrice,
+        },
+      }));
+
+    const variant = await tx.productVariant.create({
+      data: {
+        productId: productRecord.id,
+        size: parsed.data.size,
+        color: parsed.data.color || null,
+        quantity: parsed.data.quantity,
+        barcode: parsed.data.barcode || undefined,
+      },
+      include: {
+        product: {
+          include: { category: true, branch: true },
+        },
+      },
+    });
+
+    return {
+      id: variant.id,
+      productId: variant.productId,
+      name: variant.product.name,
+      brand: variant.product.brand,
+      category: variant.product.category.name,
+      categoryId: variant.product.categoryId,
+      size: variant.size,
+      color: variant.color,
+      quantity: variant.quantity,
+      barcode: variant.barcode,
+      priceIn: Number(variant.product.priceIn),
+      sellingPrice: Number(variant.product.sellingPrice),
+      branchId: variant.product.branchId,
+      branch: variant.product.branch,
+      createdAt: variant.createdAt,
+      updatedAt: variant.updatedAt,
+    };
+  });
+
   return Response.json(stock, { status: 201 });
 }

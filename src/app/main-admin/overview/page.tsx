@@ -28,7 +28,11 @@ type SaleRecord = {
   quantity: number;
   paymentMethod: "CASH" | "TRANSFER";
   createdAt: string;
-  stock: { brand: string; category: string; size: string; sellingPrice: number };
+  productVariant: {
+    size: string;
+    color?: string | null;
+    product: { name: string; brand: string; category: { name: string }; sellingPrice: number };
+  };
   soldBy: { firstName: string; lastName: string };
   branch: { name: string };
 };
@@ -39,7 +43,7 @@ type TransferRecord = {
   createdAt: string;
   fromBranch: { name: string };
   toBranch: { name: string };
-  stock: { brand: string; category: string; size: string };
+  productVariant: { size: string; color?: string | null; product: { name: string; brand: string } };
 };
 
 export default function MainAdminOverviewPage() {
@@ -72,7 +76,7 @@ export default function MainAdminOverviewPage() {
   }, []);
 
   const salesRevenue = useMemo(
-    () => sales.reduce((acc, sale) => acc + sale.quantity * sale.stock.sellingPrice, 0),
+    () => sales.reduce((acc, sale) => acc + sale.quantity * sale.productVariant.product.sellingPrice, 0),
     [sales]
   );
 
@@ -155,7 +159,7 @@ export default function MainAdminOverviewPage() {
               recentSales.map((sale) => (
                 <div key={sale.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {sale.stock.brand} - {sale.stock.category} ({sale.stock.size})
+                    {sale.productVariant.product.brand} - {sale.productVariant.product.name} ({sale.productVariant.size}{sale.productVariant.color ? ` / ${sale.productVariant.color}` : ""})
                   </p>
                   <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {sale.quantity} pcs | {sale.paymentMethod} | {sale.branch.name}
@@ -179,7 +183,7 @@ export default function MainAdminOverviewPage() {
               recentTransfers.map((transfer) => (
                 <div key={transfer.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {transfer.stock.brand} - {transfer.stock.category} ({transfer.stock.size})
+                    {transfer.productVariant.product.brand} - {transfer.productVariant.product.name} ({transfer.productVariant.size}{transfer.productVariant.color ? ` / ${transfer.productVariant.color}` : ""})
                   </p>
                   <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {transfer.fromBranch.name} to {transfer.toBranch.name} | Qty: {transfer.quantity}
