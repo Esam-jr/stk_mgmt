@@ -29,6 +29,7 @@ const superAdminNav: SidebarItem[] = [
   { name: "Overview", href: "/super-admin/overview", icon: LayoutDashboard },
   { name: "Users", href: "/super-admin/users", icon: Users },
   { name: "Branches", href: "/super-admin/branches", icon: Building2 },
+  { name: "Stock", href: "/super-admin/stock", icon: Package },
   { name: "Transfer", href: "/super-admin/transfer", icon: ArrowRightLeft },
   { name: "Reports", href: "/super-admin/reports", icon: BarChart3 },
 ];
@@ -50,17 +51,13 @@ export function Sidebar({ role }: { role: string }) {
   const router = useRouter();
 
   let navItems: SidebarItem[] = [];
-  let prefix = "";
 
   if (role === "SUPER_ADMIN") {
     navItems = superAdminNav;
-    prefix = "/super-admin";
   } else if (role === "MAIN_ADMIN") {
     navItems = mainAdminNav;
-    prefix = "/main-admin";
   } else if (role === "SALES") {
     navItems = salesNav;
-    prefix = "/sales";
   }
 
   const handleLogout = async () => {
