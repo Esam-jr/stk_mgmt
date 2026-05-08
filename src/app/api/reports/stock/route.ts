@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     where: filterBranchId ? { product: { branchId: filterBranchId } } : undefined,
     include: {
       product: {
-        include: { branch: true, category: true },
+        include: { branch: true, category: true, brand: true },
       },
     },
   });
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     id: variant.id,
     productId: variant.productId,
     name: variant.product.name,
-    brand: variant.product.brand,
+    brand: variant.product.brand.name,
     category: variant.product.category.name,
     size: variant.size,
     color: variant.color,

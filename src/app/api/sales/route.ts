@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       productVariant: {
         include: {
           product: {
-            include: { category: true },
+            include: { category: true, brand: true },
           },
         },
       },
@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
       for (const item of items) {
         const variant = await tx.productVariant.findUnique({
           where: { id: item.productVariantId },
-          include: { product: true },
+          include: { product: { include: { brand: true } } },
         });
         if (!variant) throw new Error("Variant not found");
         if (variant.product.branchId !== userBranchId) throw new Error("Item is not in your branch");
         if (variant.quantity < item.quantity) {
-          throw new Error(`Insufficient stock for ${variant.product.brand} ${variant.product.name} (${variant.size})`);
+          throw new Error(`Insufficient stock for ${variant.product.brand.name} ${variant.product.name} (${variant.size})`);
         }
 
         await tx.productVariant.update({
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
             productVariant: {
               include: {
                 product: {
-                  include: { category: true },
+                  include: { category: true, brand: true },
                 },
               },
             },
