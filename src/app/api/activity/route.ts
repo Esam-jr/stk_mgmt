@@ -12,11 +12,26 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const limitRaw = Number(searchParams.get("limit") ?? "50");
   const offsetRaw = Number(searchParams.get("offset") ?? "0");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
   const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
   const offset = Number.isFinite(offsetRaw) ? Math.max(offsetRaw, 0) : 0;
 
+  const createdAt: { gte?: Date; lte?: Date } = {};
+  if (from) {
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+    if (!Number.isNaN(fromDate.getTime())) createdAt.gte = fromDate;
+  }
+  if (to) {
+    const toDate = new Date(`${to}T23:59:59.999Z`);
+    if (!Number.isNaN(toDate.getTime())) createdAt.lte = toDate;
+  }
+
+  const where = Object.keys(createdAt).length > 0 ? { createdAt } : undefined;
+
   const [activities, total] = await Promise.all([
     prisma.activityLog.findMany({
+      where,
       include: {
         actor: {
           select: {
@@ -32,7 +47,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       skip: offset,
     }),
-    prisma.activityLog.count(),
+    prisma.activityLog.count({ where }),
   ]);
 
   return Response.json({
