@@ -61,6 +61,8 @@ export default function BranchStockPage() {
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [activeStock, setActiveStock] = useState<Stock | null>(null);
   const [branchStats, setBranchStats] = useState<BranchStats | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -94,6 +96,22 @@ export default function BranchStockPage() {
     () => branches.find((branch) => branch.id === branchId),
     [branches, branchId]
   );
+
+  const filteredStocks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return stocks.filter((stock) => {
+      const matchesQuery =
+        query.length === 0 ||
+        stock.name.toLowerCase().includes(query) ||
+        stock.brand.toLowerCase().includes(query) ||
+        stock.category.toLowerCase().includes(query) ||
+        stock.barcode.toLowerCase().includes(query) ||
+        stock.size.toLowerCase().includes(query) ||
+        (stock.color ?? "").toLowerCase().includes(query);
+      const matchesLowStock = !showLowStockOnly || stock.quantity < 10;
+      return matchesQuery && matchesLowStock;
+    });
+  }, [stocks, searchQuery, showLowStockOnly]);
 
   const fetchBranchData = async () => {
     setIsLoading(true);
@@ -168,7 +186,7 @@ export default function BranchStockPage() {
     setEditFormData({
       name: stock.name,
       categoryId: stock.categoryId,
-      brandId: (stock as any).brandId ?? "",
+      brandId: stock.brandId,
       brand: stock.brand,
       size: stock.size,
       color: stock.color || "",
@@ -218,11 +236,24 @@ export default function BranchStockPage() {
   };
 
   const columns = [
-    { header: "Barcode", accessorKey: "barcode" as keyof Stock },
+    { header: "Code", accessorKey: "barcode" as keyof Stock },
     { header: "Product", cell: (s: Stock) => `${s.brand} - ${s.name}` },
     { header: "Category", accessorKey: "category" as keyof Stock },
     { header: "Variant", cell: (s: Stock) => `${s.size}${s.color ? ` / ${s.color}` : ""}` },
     { header: "Qty", accessorKey: "quantity" as keyof Stock },
+    {
+      header: "Status",
+      cell: (s: Stock) =>
+        s.quantity < 10 ? (
+          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+            Low Stock
+          </span>
+        ) : (
+          <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+            Healthy
+          </span>
+        ),
+    },
     { header: "Price", cell: (s: Stock) => `$${s.sellingPrice.toFixed(2)}` },
     {
       header: "Actions",
@@ -280,12 +311,35 @@ export default function BranchStockPage() {
               <StatCard title="Transfers (In/Out)" value={`${branchStats.transferInCount}/${branchStats.transferOutCount}`} />
             </div>
           )}
-          <DataTable columns={columns} data={stocks} />
+          <div className="rounded-lg border border-zinc-300 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-64 flex-1">
+                <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Search Stock</label>
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by code, product, brand, category, size..."
+                />
+              </div>
+              <Button
+                type="button"
+                variant={showLowStockOnly ? "secondary" : "ghost"}
+                onClick={() => setShowLowStockOnly((prev) => !prev)}
+              >
+                {showLowStockOnly ? "Showing Low Stock" : "Show Low Stock Only"}
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Displaying {filteredStocks.length} of {stocks.length} stock variants.
+            </p>
+          </div>
+          <DataTable columns={columns} data={filteredStocks} />
         </>
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create New Stock Item">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-xs text-zinc-500">Stock code is auto-generated as a unique 3-digit number.</p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Product Name</label>
@@ -478,7 +532,7 @@ export default function BranchStockPage() {
       >
         {activeStock && (
           <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
-            <div><span className="font-semibold">Barcode:</span> {activeStock.barcode}</div>
+            <div><span className="font-semibold">Stock Code:</span> {activeStock.barcode}</div>
             <div><span className="font-semibold">Name:</span> {activeStock.name}</div>
             <div><span className="font-semibold">Brand:</span> {activeStock.brand}</div>
             <div><span className="font-semibold">Category:</span> {activeStock.category}</div>

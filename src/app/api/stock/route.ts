@@ -2,7 +2,17 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
+
+async function generateThreeDigitBarcode(tx: Prisma.TransactionClient): Promise<string> {
+  for (let attempts = 0; attempts < 50; attempts += 1) {
+    const candidate = String(100 + Math.floor(Math.random() * 900));
+    const exists = await tx.productVariant.findUnique({ where: { barcode: candidate } });
+    if (!exists) return candidate;
+  }
+  throw new Error("Unable to generate unique 3-digit stock code");
+}
 
 const stockSchema = z.object({
   name: z.string().min(1),
@@ -14,7 +24,7 @@ const stockSchema = z.object({
   priceIn: z.coerce.number().positive(),
   sellingPrice: z.coerce.number().positive(),
   branchId: z.string().min(1),
-  barcode: z.string().optional().nullable(),
+  barcode: z.string().regex(/^\d{3}$/, "Code must be exactly 3 digits").optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
@@ -98,7 +108,7 @@ export async function POST(request: NextRequest) {
         size: parsed.data.size,
         color: parsed.data.color || null,
         quantity: parsed.data.quantity,
-        barcode: parsed.data.barcode || undefined,
+        barcode: parsed.data.barcode || (await generateThreeDigitBarcode(tx)),
       },
       include: {
         product: { include: { category: true, brand: true, branch: true } },

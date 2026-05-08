@@ -5,6 +5,15 @@ import { logActivity } from "@/lib/activity";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
+async function generateThreeDigitBarcode(tx: Prisma.TransactionClient): Promise<string> {
+  for (let attempts = 0; attempts < 50; attempts += 1) {
+    const candidate = String(100 + Math.floor(Math.random() * 900));
+    const exists = await tx.productVariant.findUnique({ where: { barcode: candidate } });
+    if (!exists) return candidate;
+  }
+  throw new Error("Unable to generate unique 3-digit stock code");
+}
+
 const transferSchema = z.object({
   productVariantId: z.string().min(1),
   toBranchId: z.string().min(1),
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
             size: sourceVariant.size,
             color: sourceVariant.color,
             quantity,
-            barcode: crypto.randomUUID(),
+            barcode: await generateThreeDigitBarcode(tx),
           },
         });
       }
