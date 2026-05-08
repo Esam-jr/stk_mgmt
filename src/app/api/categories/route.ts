@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as { role?: string }).role;
-  if (role !== "SUPER_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (role !== "SUPER_ADMIN" && role !== "MAIN_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
   const parsed = categorySchema.safeParse(body);
@@ -48,7 +48,7 @@ export async function DELETE(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const role = (session.user as { role?: string }).role;
-  if (role !== "SUPER_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (role !== "SUPER_ADMIN" && role !== "MAIN_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = request.nextUrl;
   const id = searchParams.get("id");
@@ -65,7 +65,7 @@ export async function DELETE(request: NextRequest) {
       description: `Deleted category ${existing?.name ?? id}`,
     });
     return Response.json({ success: true });
-  } catch (error) {
+  } catch {
     return Response.json({ error: "Category is in use or not found" }, { status: 400 });
   }
 }

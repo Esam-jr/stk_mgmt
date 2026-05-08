@@ -1,5 +1,5 @@
 import { BranchStockManager } from "@/components/stock/BranchStockManager";
 
 export default function BranchStockPage() {
-  return <BranchStockManager backHref="/main-admin/stock" />;
+  return <BranchStockManager backHref="/main-admin/stock" canManageCatalog />;
 }
