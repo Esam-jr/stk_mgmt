@@ -13,9 +13,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const branchId = searchParams.get("branchId");
-  const userBranchId = (session.user as { branchId?: string }).branchId;
 
-  const filterBranchId = role === "MAIN_ADMIN" && userBranchId ? userBranchId : branchId;
+  const filterBranchId = branchId;
 
   const variants = await prisma.productVariant.findMany({
     where: filterBranchId ? { product: { branchId: filterBranchId } } : undefined,
