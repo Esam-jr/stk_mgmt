@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       productVariant: {
         include: {
           product: {
-            include: { category: true },
+            include: { category: true, brand: true },
           },
         },
       },
@@ -65,11 +65,14 @@ export async function POST(request: NextRequest) {
     const transfer = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const sourceVariant = await tx.productVariant.findUnique({
         where: { id: productVariantId },
-        include: { product: true },
+        include: { product: { include: { branch: true, brand: true } } },
       });
       if (!sourceVariant) throw new Error("Variant not found");
       if (sourceVariant.quantity < quantity) throw new Error("Insufficient stock for transfer");
       if (sourceVariant.product.branchId === toBranchId) throw new Error("Cannot transfer to the same branch");
+
+      const destinationBranch = await tx.branch.findUnique({ where: { id: toBranchId } });
+      if (!destinationBranch) throw new Error("Destination branch not found");
 
       // Decrement source
       await tx.productVariant.update({
@@ -141,7 +144,7 @@ export async function POST(request: NextRequest) {
           productVariant: {
             include: {
               product: {
-                include: { category: true },
+                include: { category: true, brand: true },
               },
             },
           },
@@ -156,7 +159,7 @@ export async function POST(request: NextRequest) {
         entityType: "StockTransfer",
         entityId: createdTransfer.id,
         actorId: session.user.id,
-        description: `Transferred ${quantity} unit(s) from branch ${sourceVariant.product.branchId} to ${toBranchId}`,
+        description: `Transferred ${quantity} unit(s) of ${sourceVariant.product.brand.name} ${sourceVariant.product.name} from ${sourceVariant.product.branch.name} to ${destinationBranch.name}`,
         metadata: {
           productVariantId,
           quantity,
