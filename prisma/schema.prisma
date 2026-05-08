@@ -29,6 +29,15 @@ model Category {
   products  Product[]
 }
 
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
 model User {
   id        String   @id @default(cuid())
   firstName String
@@ -64,7 +73,8 @@ model Branch {
 model Product {
   id           String           @id @default(cuid())
   name         String
-  brand        String
+  brandId      String
+  brand        Brand            @relation(fields: [brandId], references: [id])
   categoryId   String
   category     Category         @relation(fields: [categoryId], references: [id])
   branchId     String
@@ -76,7 +86,7 @@ model Product {
 
   variants     ProductVariant[]
 
-  @@index([branchId, categoryId])
+  @@index([branchId, categoryId, brandId])
 }
 
 model ProductVariant {

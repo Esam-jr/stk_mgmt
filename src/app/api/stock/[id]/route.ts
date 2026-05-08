@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const updateStockSchema = z.object({
   name: z.string().min(1).optional(),
-  brand: z.string().min(1).optional(),
+  brandId: z.string().min(1).optional(),
   size: z.string().min(1).optional(),
   color: z.string().optional().nullable(),
   quantity: z.coerce.number().int().min(0).optional(),
@@ -43,7 +43,7 @@ export async function PUT(
       where: { id: existing.productId },
       data: {
         ...(parsed.data.name ? { name: parsed.data.name } : {}),
-        ...(parsed.data.brand ? { brand: parsed.data.brand } : {}),
+        ...(parsed.data.brandId ? { brandId: parsed.data.brandId } : {}),
         ...(parsed.data.priceIn !== undefined ? { priceIn: parsed.data.priceIn } : {}),
         ...(parsed.data.sellingPrice !== undefined ? { sellingPrice: parsed.data.sellingPrice } : {}),
         ...(parsed.data.categoryId ? { categoryId: parsed.data.categoryId } : {}),
@@ -60,7 +60,7 @@ export async function PUT(
         ...(parsed.data.barcode !== undefined ? { barcode: parsed.data.barcode || undefined } : {}),
       },
       include: {
-        product: { include: { category: true, branch: true } },
+        product: { include: { category: true, brand: true, branch: true } },
       },
     });
 
@@ -68,7 +68,8 @@ export async function PUT(
       id: updatedVariant.id,
       productId: updatedVariant.productId,
       name: updatedVariant.product.name,
-      brand: updatedVariant.product.brand,
+      brand: updatedVariant.product.brand.name,
+      brandId: updatedVariant.product.brandId,
       category: updatedVariant.product.category.name,
       categoryId: updatedVariant.product.categoryId,
       size: updatedVariant.size,

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         effectiveBranchId ? { product: { branchId: effectiveBranchId } } : {},
         {
           OR: [
-            { product: { brand: { contains: query, mode: "insensitive" } } },
+            { product: { brand: { name: { contains: query, mode: "insensitive" } } } },
             { product: { name: { contains: query, mode: "insensitive" } } },
             { product: { category: { name: { contains: query, mode: "insensitive" } } } },
             { barcode: { contains: query, mode: "insensitive" } },
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       ],
     },
     include: {
-      product: { include: { category: true, branch: true } },
+      product: { include: { category: true, brand: true, branch: true } },
     },
     take: 20,
   });
@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
       id: variant.id,
       productId: variant.productId,
       name: variant.product.name,
-      brand: variant.product.brand,
+      brand: variant.product.brand.name,
+      brandId: variant.product.brandId,
       category: variant.product.category.name,
       size: variant.size,
       color: variant.color,

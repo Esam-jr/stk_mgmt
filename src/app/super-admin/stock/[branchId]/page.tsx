@@ -17,6 +17,7 @@ type Stock = {
   category: string;
   categoryId: string;
   brand: string;
+  brandId: string;
   size: string;
   color?: string | null;
   quantity: number;
@@ -30,6 +31,7 @@ type Stock = {
 
 type Branch = { id: string; name: string };
 type Category = { id: string; name: string };
+type Brand = { id: string; name: string };
 type BranchStats = {
   totalSkus: number;
   totalUnits: number;
@@ -51,6 +53,7 @@ export default function BranchStockPage() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,6 +66,7 @@ export default function BranchStockPage() {
   const [formData, setFormData] = useState({
     name: "",
     categoryId: "",
+    brandId: "",
     brand: "",
     size: "",
     color: "",
@@ -73,6 +77,7 @@ export default function BranchStockPage() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     categoryId: "",
+    brandId: "",
     brand: "",
     size: "",
     color: "",
@@ -94,11 +99,12 @@ export default function BranchStockPage() {
   const fetchBranchData = async () => {
     setIsLoading(true);
     try {
-      const [stockRes, branchesRes, statsRes, categoriesRes] = await Promise.all([
+      const [stockRes, branchesRes, statsRes, categoriesRes, brandsRes] = await Promise.all([
         fetch(`/api/stock?branchId=${branchId}`),
         fetch("/api/branches"),
         fetch(`/api/branches/${branchId}/stats`),
         fetch("/api/categories"),
+        fetch("/api/brands"),
       ]);
 
       if (stockRes.ok) setStocks(await stockRes.json());
@@ -108,6 +114,7 @@ export default function BranchStockPage() {
         setBranchStats(payload.stats);
       }
       if (categoriesRes.ok) setCategories(await categoriesRes.json());
+      if (brandsRes.ok) setBrands(await brandsRes.json());
     } catch (error) {
       toast.error("Failed to load branch stock");
     } finally {
@@ -136,6 +143,7 @@ export default function BranchStockPage() {
       setFormData({
         name: "",
         categoryId: "",
+        brandId: "",
         brand: "",
         size: "",
         color: "",
@@ -161,6 +169,7 @@ export default function BranchStockPage() {
     setEditFormData({
       name: stock.name,
       categoryId: stock.categoryId,
+      brandId: stock.brandId,
       brand: stock.brand,
       size: stock.size,
       color: stock.color || "",
@@ -285,7 +294,19 @@ export default function BranchStockPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
-              <Input required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} />
+              <select
+                className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                required
+                value={formData.brandId}
+                onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+              >
+                <option value="">Select brand...</option>
+                {brands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -380,7 +401,19 @@ export default function BranchStockPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">Brand</label>
-              <Input required value={editFormData.brand} onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })} />
+              <select
+                className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                required
+                value={editFormData.brandId}
+                onChange={(e) => setEditFormData({ ...editFormData, brandId: e.target.value })}
+              >
+                <option value="">Select brand...</option>
+                {brands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

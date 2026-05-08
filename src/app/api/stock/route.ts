@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const stockSchema = z.object({
   name: z.string().min(1),
-  brand: z.string().min(1),
+  brandId: z.string().min(1),
   categoryId: z.string().min(1),
   size: z.string().min(1),
   color: z.string().optional().nullable(),
@@ -26,9 +26,7 @@ export async function GET(request: NextRequest) {
   const variants = await prisma.productVariant.findMany({
     where: branchId ? { product: { branchId } } : undefined,
     include: {
-      product: {
-        include: { category: true, branch: true },
-      },
+      product: { include: { category: true, brand: true, branch: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -37,7 +35,8 @@ export async function GET(request: NextRequest) {
     id: variant.id,
     productId: variant.productId,
     name: variant.product.name,
-    brand: variant.product.brand,
+    brand: variant.product.brand.name,
+    brandId: variant.product.brandId,
     category: variant.product.category.name,
     categoryId: variant.product.categoryId,
     size: variant.size,
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
     const product = await tx.product.findFirst({
       where: {
         name: parsed.data.name,
-        brand: parsed.data.brand,
+        brandId: parsed.data.brandId,
         categoryId: parsed.data.categoryId,
         branchId: parsed.data.branchId,
         priceIn: parsed.data.priceIn,
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
       (await tx.product.create({
         data: {
           name: parsed.data.name,
-          brand: parsed.data.brand,
+          brandId: parsed.data.brandId,
           categoryId: parsed.data.categoryId,
           branchId: parsed.data.branchId,
           priceIn: parsed.data.priceIn,
@@ -101,9 +100,7 @@ export async function POST(request: NextRequest) {
         barcode: parsed.data.barcode || undefined,
       },
       include: {
-        product: {
-          include: { category: true, branch: true },
-        },
+        product: { include: { category: true, brand: true, branch: true } },
       },
     });
 
@@ -111,7 +108,8 @@ export async function POST(request: NextRequest) {
       id: variant.id,
       productId: variant.productId,
       name: variant.product.name,
-      brand: variant.product.brand,
+      brand: variant.product.brand.name,
+      brandId: variant.product.brandId,
       category: variant.product.category.name,
       categoryId: variant.product.categoryId,
       size: variant.size,

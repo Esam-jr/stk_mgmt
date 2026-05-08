@@ -9,6 +9,8 @@ import { Building2, MapPin, PlusCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Branch = { id: string; name: string; location?: string | null };
+type Category = { id: string; name: string };
+type Brand = { id: string; name: string };
 
 export default function StockPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -17,8 +19,16 @@ export default function StockPage() {
   const [isSubmittingBranch, setIsSubmittingBranch] = useState(false);
   const [branchFormData, setBranchFormData] = useState({ name: "", location: "" });
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newBrandName, setNewBrandName] = useState("");
+  const [isSubmittingCatalog, setIsSubmittingCatalog] = useState(false);
+
   useEffect(() => {
     fetchBranches();
+    fetchCatalog();
   }, []);
 
   const fetchBranches = async () => {
@@ -30,6 +40,84 @@ export default function StockPage() {
       toast.error("Failed to load branches");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCatalog = async () => {
+    try {
+      const [cRes, bRes] = await Promise.all([fetch("/api/categories"), fetch("/api/brands")]);
+      if (cRes.ok) setCategories(await cRes.json());
+      if (bRes.ok) setBrands(await bRes.json());
+    } catch (error) {
+      toast.error("Failed to load catalog");
+    }
+  };
+
+  const addCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setIsSubmittingCatalog(true);
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      setNewCategoryName("");
+      fetchCatalog();
+      toast.success("Category added");
+    } catch {
+      toast.error("Failed to add category");
+    } finally {
+      setIsSubmittingCatalog(false);
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    setIsSubmittingCatalog(true);
+    try {
+      const res = await fetch(`/api/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      fetchCatalog();
+      toast.success("Category removed");
+    } catch {
+      toast.error("Failed to remove category");
+    } finally {
+      setIsSubmittingCatalog(false);
+    }
+  };
+
+  const addBrand = async () => {
+    if (!newBrandName.trim()) return;
+    setIsSubmittingCatalog(true);
+    try {
+      const res = await fetch("/api/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newBrandName.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      setNewBrandName("");
+      fetchCatalog();
+      toast.success("Brand added");
+    } catch {
+      toast.error("Failed to add brand");
+    } finally {
+      setIsSubmittingCatalog(false);
+    }
+  };
+
+  const deleteBrand = async (id: string) => {
+    setIsSubmittingCatalog(true);
+    try {
+      const res = await fetch(`/api/brands?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      fetchCatalog();
+      toast.success("Brand removed");
+    } catch {
+      toast.error("Failed to remove brand");
+    } finally {
+      setIsSubmittingCatalog(false);
     }
   };
 
@@ -70,6 +158,11 @@ export default function StockPage() {
           <Button onClick={() => setIsAddBranchModalOpen(true)} className="gap-2">
             <PlusCircle className="h-4 w-4" />
             Add Branch
+          </Button>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setIsCatalogModalOpen(true)}>
+            Manage Categories & Brands
           </Button>
         </div>
       </div>
@@ -142,6 +235,58 @@ export default function StockPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={isCatalogModalOpen} onClose={() => setIsCatalogModalOpen(false)} title="Catalog Settings">
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Categories</h3>
+            <div className="flex gap-2">
+              <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category name" />
+              <Button onClick={addCategory} isLoading={isSubmittingCatalog} disabled={!newCategoryName.trim()}>
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => deleteCategory(c.id)}
+                  disabled={isSubmittingCatalog}
+                  className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  title="Click to remove"
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500">Tip: categories in use cannot be deleted.</p>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Brands</h3>
+            <div className="flex gap-2">
+              <Input value={newBrandName} onChange={(e) => setNewBrandName(e.target.value)} placeholder="New brand name" />
+              <Button onClick={addBrand} isLoading={isSubmittingCatalog} disabled={!newBrandName.trim()}>
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {brands.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => deleteBrand(b.id)}
+                  disabled={isSubmittingCatalog}
+                  className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  title="Click to remove"
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-zinc-500">Tip: brands in use cannot be deleted.</p>
+          </div>
+        </div>
       </Modal>
     </div>
   );

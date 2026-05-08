@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const categories = await prisma.category.findMany({
+  const brands = await prisma.brand.findMany({
     orderBy: { name: "asc" },
   });
 
-  return Response.json(categories);
+  return Response.json(brands);
 }
 
-const categorySchema = z.object({
+const brandSchema = z.object({
   name: z.string().min(1),
 });
 
@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
   if (role !== "SUPER_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const parsed = categorySchema.safeParse(body);
+  const parsed = brandSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const created = await prisma.category.create({
+  const created = await prisma.brand.create({
     data: { name: parsed.data.name },
   });
 
@@ -46,9 +46,9 @@ export async function DELETE(request: NextRequest) {
   if (!id) return Response.json({ error: "Missing id" }, { status: 400 });
 
   try {
-    await prisma.category.delete({ where: { id } });
+    await prisma.brand.delete({ where: { id } });
     return Response.json({ success: true });
   } catch (error) {
-    return Response.json({ error: "Category is in use or not found" }, { status: 400 });
+    return Response.json({ error: "Brand is in use or not found" }, { status: 400 });
   }
 }
