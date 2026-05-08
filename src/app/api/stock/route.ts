@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 
 const stockSchema = z.object({
@@ -101,6 +102,18 @@ export async function POST(request: NextRequest) {
       },
       include: {
         product: { include: { category: true, brand: true, branch: true } },
+      },
+    });
+
+    await logActivity(tx, {
+      action: "STOCK_CREATE",
+      entityType: "ProductVariant",
+      entityId: variant.id,
+      actorId: session.user.id,
+      description: `Added stock variant ${variant.product.brand.name} ${variant.product.name} (${variant.size}${variant.color ? `/${variant.color}` : ""})`,
+      metadata: {
+        branchId: variant.product.branchId,
+        quantity: variant.quantity,
       },
     });
 

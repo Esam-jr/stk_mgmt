@@ -52,6 +52,7 @@ model User {
 
   sales          Sale[]
   transfers      StockTransfer[]
+  activityLogs   ActivityLog[]
   sessions       Session[]
   accounts       Account[]
 }
@@ -132,6 +133,21 @@ model StockTransfer {
   transferredById String
   transferredBy  User     @relation(fields: [transferredById], references: [id])
   createdAt      DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String?
+  description String
+  metadata    Json?
+  actorId     String?
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
 }
 
 // better-auth requires Session model

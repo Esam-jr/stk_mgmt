@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const saleSchema = z.object({
@@ -72,8 +74,8 @@ export async function POST(request: NextRequest) {
 
   // Use transaction to ensure stock consistency
   try {
-    const result = await prisma.$transaction(async (tx: any) => {
-      const saleRecords: any[] = [];
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const saleRecords = [];
 
       for (const item of items) {
         const variant = await tx.productVariant.findUnique({
@@ -107,6 +109,20 @@ export async function POST(request: NextRequest) {
                 },
               },
             },
+          },
+        });
+
+        await logActivity(tx, {
+          action: "SALE_CREATE",
+          entityType: "Sale",
+          entityId: createdSale.id,
+          actorId: session.user.id,
+          description: `Recorded sale of ${item.quantity} unit(s) for ${variant.product.name} (${variant.size})`,
+          metadata: {
+            productVariantId: item.productVariantId,
+            quantity: item.quantity,
+            branchId: userBranchId,
+            paymentMethod,
           },
         });
 

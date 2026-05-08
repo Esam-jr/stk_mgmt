@@ -8,7 +8,7 @@ import {
   Users,
   Building2,
   ArrowRightLeft,
-  BarChart3,
+  Activity,
   Package,
   ChevronRight,
 } from "lucide-react";
@@ -21,28 +21,47 @@ type StockSummary = {
   lowStockCount: number;
 };
 
+type ActivityItem = {
+  id: string;
+  description: string;
+  action: string;
+  entityType: string;
+  createdAt: string;
+  actor?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+};
+
 export default function SuperAdminOverviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [usersCount, setUsersCount] = useState(0);
   const [branchesCount, setBranchesCount] = useState(0);
   const [transfersCount, setTransfersCount] = useState(0);
   const [stockSummary, setStockSummary] = useState<StockSummary | null>(null);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     const fetchOverview = async () => {
       setIsLoading(true);
       try {
-        const [usersRes, branchesRes, transfersRes, stockRes] = await Promise.all([
+        const [usersRes, branchesRes, transfersRes, stockRes, activityRes] = await Promise.all([
           fetch("/api/users"),
           fetch("/api/branches"),
           fetch("/api/transfer"),
           fetch("/api/reports/stock"),
+          fetch("/api/activity?limit=8"),
         ]);
 
         if (usersRes.ok) setUsersCount((await usersRes.json()).length);
         if (branchesRes.ok) setBranchesCount((await branchesRes.json()).length);
         if (transfersRes.ok) setTransfersCount((await transfersRes.json()).length);
         if (stockRes.ok) setStockSummary(await stockRes.json());
+        if (activityRes.ok) {
+          const payload = await activityRes.json();
+          setRecentActivity(payload.items ?? []);
+        }
       } catch (error) {
         toast.error("Failed to load overview");
       } finally {
@@ -94,8 +113,34 @@ export default function SuperAdminOverviewPage() {
           <Action href="/super-admin/users" label="Manage Users" />
           <Action href="/super-admin/stock" label="Manage Stock" />
           <Action href="/super-admin/transfer" label="Manage Transfers" />
+          <Action href="/super-admin/activity" label="Open Activity Feed" />
           <Action href="/super-admin/reports" label="Open Reports" />
         </div>
+      </div>
+
+      <div className="rounded-xl border border-zinc-300 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <Activity className="h-5 w-5 text-indigo-500" />
+          Recent Activity
+        </h2>
+        {recentActivity.length === 0 ? (
+          <p className="text-sm text-zinc-500">No activity recorded yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{activity.description}</p>
+                  <span className="text-xs text-zinc-500">{new Date(activity.createdAt).toLocaleString()}</span>
+                </div>
+                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                  {activity.action} • {activity.entityType}
+                  {activity.actor ? ` • ${activity.actor.firstName} ${activity.actor.lastName} (${activity.actor.role})` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

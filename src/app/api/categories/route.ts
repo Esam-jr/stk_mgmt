@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 
 export async function GET(request: NextRequest) {
@@ -32,6 +33,14 @@ export async function POST(request: NextRequest) {
     data: { name: parsed.data.name },
   });
 
+  await logActivity(prisma, {
+    action: "CATEGORY_CREATE",
+    entityType: "Category",
+    entityId: created.id,
+    actorId: session.user.id,
+    description: `Created category ${created.name}`,
+  });
+
   return Response.json(created, { status: 201 });
 }
 
@@ -46,7 +55,15 @@ export async function DELETE(request: NextRequest) {
   if (!id) return Response.json({ error: "Missing id" }, { status: 400 });
 
   try {
+    const existing = await prisma.category.findUnique({ where: { id } });
     await prisma.category.delete({ where: { id } });
+    await logActivity(prisma, {
+      action: "CATEGORY_DELETE",
+      entityType: "Category",
+      entityId: id,
+      actorId: session.user.id,
+      description: `Deleted category ${existing?.name ?? id}`,
+    });
     return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: "Category is in use or not found" }, { status: 400 });

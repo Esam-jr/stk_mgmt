@@ -8,6 +8,7 @@ import {
   Users, 
   ArrowRightLeft, 
   BarChart3, 
+  Activity,
   Package, 
   ShoppingCart,
   History,
@@ -29,6 +30,7 @@ const superAdminNav: SidebarItem[] = [
   { name: "Users", href: "/super-admin/users", icon: Users },
   { name: "Stock", href: "/super-admin/stock", icon: Package },
   { name: "Transfer", href: "/super-admin/transfer", icon: ArrowRightLeft },
+  { name: "Activity", href: "/super-admin/activity", icon: Activity },
   { name: "Reports", href: "/super-admin/reports", icon: BarChart3 },
 ];
 

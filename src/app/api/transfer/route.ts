@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const transferSchema = z.object({
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
   const { productVariantId, toBranchId, quantity } = parsed.data;
 
   try {
-    const transfer = await prisma.$transaction(async (tx: any) => {
+    const transfer = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const sourceVariant = await tx.productVariant.findUnique({
         where: { id: productVariantId },
         include: { product: true },
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       let targetProduct = await tx.product.findFirst({
         where: {
           name: sourceVariant.product.name,
-          brand: sourceVariant.product.brand,
+          brandId: sourceVariant.product.brandId,
           categoryId: sourceVariant.product.categoryId,
           branchId: toBranchId,
           priceIn: sourceVariant.product.priceIn,
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
         targetProduct = await tx.product.create({
           data: {
             name: sourceVariant.product.name,
-            brand: sourceVariant.product.brand,
+            brandId: sourceVariant.product.brandId,
             categoryId: sourceVariant.product.categoryId,
             branchId: toBranchId,
             priceIn: sourceVariant.product.priceIn,
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Record transfer
-      return await tx.stockTransfer.create({
+      const createdTransfer = await tx.stockTransfer.create({
         data: {
           productVariantId,
           fromBranchId: sourceVariant.product.branchId,
@@ -139,6 +141,22 @@ export async function POST(request: NextRequest) {
           transferredBy: { select: { id: true, firstName: true, lastName: true } },
         },
       });
+
+      await logActivity(tx, {
+        action: "TRANSFER_CREATE",
+        entityType: "StockTransfer",
+        entityId: createdTransfer.id,
+        actorId: session.user.id,
+        description: `Transferred ${quantity} unit(s) from branch ${sourceVariant.product.branchId} to ${toBranchId}`,
+        metadata: {
+          productVariantId,
+          quantity,
+          fromBranchId: sourceVariant.product.branchId,
+          toBranchId,
+        },
+      });
+
+      return createdTransfer;
       });
 
       return Response.json(transfer, { status: 201 });

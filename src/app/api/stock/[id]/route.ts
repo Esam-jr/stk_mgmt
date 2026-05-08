@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 import { z } from "zod";
 
 const updateStockSchema = z.object({
@@ -64,6 +65,18 @@ export async function PUT(
       },
     });
 
+    await logActivity(tx, {
+      action: "STOCK_UPDATE",
+      entityType: "ProductVariant",
+      entityId: updatedVariant.id,
+      actorId: session.user.id,
+      description: `Updated stock variant ${updatedVariant.product.brand.name} ${updatedVariant.product.name} (${updatedVariant.size}${updatedVariant.color ? `/${updatedVariant.color}` : ""})`,
+      metadata: {
+        quantity: updatedVariant.quantity,
+        branchId: updatedVariant.product.branchId,
+      },
+    });
+
     return {
       id: updatedVariant.id,
       productId: updatedVariant.productId,
@@ -101,10 +114,24 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.$transaction(async (tx) => {
-    const variant = await tx.productVariant.findUnique({ where: { id } });
+    const variant = await tx.productVariant.findUnique({
+      where: { id },
+      include: { product: { include: { brand: true } } },
+    });
     if (!variant) return;
 
     await tx.productVariant.delete({ where: { id } });
+
+    await logActivity(tx, {
+      action: "STOCK_DELETE",
+      entityType: "ProductVariant",
+      entityId: id,
+      actorId: session.user.id,
+      description: `Deleted stock variant ${variant.product.brand.name} ${variant.product.name} (${variant.size}${variant.color ? `/${variant.color}` : ""})`,
+      metadata: {
+        branchId: variant.product.branchId,
+      },
+    });
 
     const remaining = await tx.productVariant.count({ where: { productId: variant.productId } });
     if (remaining === 0) {
