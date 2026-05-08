@@ -38,6 +38,7 @@ const mainAdminNav: SidebarItem[] = [
   { name: "Overview", href: "/main-admin/overview", icon: LayoutDashboard },
   { name: "Stock", href: "/main-admin/stock", icon: Package },
   { name: "Transfer", href: "/main-admin/transfer", icon: ArrowRightLeft },
+  { name: "Sales History", href: "/main-admin/sales-history", icon: History },
   { name: "Reports", href: "/main-admin/reports", icon: BarChart3 },
 ];
 
