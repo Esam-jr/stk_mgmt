@@ -31,7 +31,7 @@ type SaleRecord = {
   productVariant: {
     size: string;
     color?: string | null;
-    product: { name: string; brand: string; category: { name: string }; sellingPrice: number };
+    product: { name: string; brand: { name: string }; category: { name: string }; sellingPrice: number | string };
   };
   soldBy: { firstName: string; lastName: string };
   branch: { name: string };
@@ -43,7 +43,7 @@ type TransferRecord = {
   createdAt: string;
   fromBranch: { name: string };
   toBranch: { name: string };
-  productVariant: { size: string; color?: string | null; product: { name: string; brand: string } };
+  productVariant: { size: string; color?: string | null; product: { name: string; brand: { name: string } } };
 };
 
 export default function MainAdminOverviewPage() {
@@ -65,7 +65,7 @@ export default function MainAdminOverviewPage() {
         if (stockRes.ok) setStockSummary(await stockRes.json());
         if (salesRes.ok) setSales(await salesRes.json());
         if (transferRes.ok) setTransfers(await transferRes.json());
-      } catch (error) {
+      } catch {
         toast.error("Failed to load overview dashboard");
       } finally {
         setIsLoading(false);
@@ -76,7 +76,7 @@ export default function MainAdminOverviewPage() {
   }, []);
 
   const salesRevenue = useMemo(
-    () => sales.reduce((acc, sale) => acc + sale.quantity * sale.productVariant.product.sellingPrice, 0),
+    () => sales.reduce((acc, sale) => acc + sale.quantity * Number(sale.productVariant.product.sellingPrice), 0),
     [sales]
   );
 
@@ -106,7 +106,7 @@ export default function MainAdminOverviewPage() {
           <div className="flex flex-wrap gap-2">
             <QuickAction href="/main-admin/stock" icon={Package} label="Manage Stock" hint="Add, update, and monitor branch inventory." />
             <QuickAction href="/main-admin/transfer" icon={ArrowRightLeft} label="Transfer Stock" hint="Move products between branches quickly." />
-            <QuickAction href="/main-admin/reports" icon={BarChart3} label="View Reports" hint="Analyze revenue, profit, and trends." />
+            <QuickAction href="/main-admin/reports" icon={BarChart3} label="View Reports" hint="Analyze stock value, branch inventory, and low-stock risks." />
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function MainAdminOverviewPage() {
               recentSales.map((sale) => (
                 <div key={sale.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {sale.productVariant.product.brand} - {sale.productVariant.product.name} ({sale.productVariant.size}{sale.productVariant.color ? ` / ${sale.productVariant.color}` : ""})
+                    {sale.productVariant.product.brand.name} - {sale.productVariant.product.name} ({sale.productVariant.size}{sale.productVariant.color ? ` / ${sale.productVariant.color}` : ""})
                   </p>
                   <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {sale.quantity} pcs | {sale.paymentMethod} | {sale.branch.name}
@@ -183,7 +183,7 @@ export default function MainAdminOverviewPage() {
               recentTransfers.map((transfer) => (
                 <div key={transfer.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    {transfer.productVariant.product.brand} - {transfer.productVariant.product.name} ({transfer.productVariant.size}{transfer.productVariant.color ? ` / ${transfer.productVariant.color}` : ""})
+                    {transfer.productVariant.product.brand.name} - {transfer.productVariant.product.name} ({transfer.productVariant.size}{transfer.productVariant.color ? ` / ${transfer.productVariant.color}` : ""})
                   </p>
                   <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {transfer.fromBranch.name} to {transfer.toBranch.name} | Qty: {transfer.quantity}

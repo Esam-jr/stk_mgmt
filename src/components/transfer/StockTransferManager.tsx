@@ -242,7 +242,7 @@ export function StockTransferManager() {
             </div>
           </div>
 
-          <div className="grid max-h-[520px] grid-cols-1 gap-3 overflow-y-auto pr-1 lg:grid-cols-2">
+          <div className="grid max-h-130 grid-cols-1 gap-3 overflow-y-auto pr-1 lg:grid-cols-2">
             {availableStocks.map((stock) => {
               const isSelected = stock.id === formData.productVariantId;
               return (
