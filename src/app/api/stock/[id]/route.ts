@@ -17,6 +17,12 @@ const updateStockSchema = z.object({
   barcode: z.string().optional().nullable(),
 });
 
+function validatePricePair(priceIn: number, sellingPrice: number) {
+  if (sellingPrice <= priceIn) {
+    throw new Error("Sell price must be higher than buy price");
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -39,6 +45,9 @@ export async function PUT(
       include: { product: true },
     });
     if (!existing) throw new Error("Variant not found");
+    const nextPriceIn = parsed.data.priceIn ?? Number(existing.product.priceIn);
+    const nextSellingPrice = parsed.data.sellingPrice ?? Number(existing.product.sellingPrice);
+    validatePricePair(nextPriceIn, nextSellingPrice);
 
     const updatedProduct = await tx.product.update({
       where: { id: existing.productId },

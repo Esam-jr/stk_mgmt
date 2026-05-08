@@ -88,6 +88,10 @@ function findCatalogId(items: CatalogItem[], value: string) {
   return items.find((item) => item.id === value || normalizeKey(item.name) === normalized)?.id ?? "";
 }
 
+function hasValidPricePair(formData: { priceIn: number; sellingPrice: number }) {
+  return formData.sellingPrice > formData.priceIn;
+}
+
 export function BranchStockManager({ backHref, canManageCatalog = false }: BranchStockManagerProps) {
   const params = useParams<{ branchId: string }>();
   const branchId = params.branchId;
@@ -172,6 +176,10 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasValidPricePair(formData)) {
+      toast.error("Sell price must be higher than buy price");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -221,6 +229,10 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeStock) return;
+    if (!hasValidPricePair(editFormData)) {
+      toast.error("Sell price must be higher than buy price");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/stock/${activeStock.id}`, {
@@ -326,11 +338,12 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
           !item.size ||
           Number.isNaN(item.quantity) ||
           Number.isNaN(item.priceIn) ||
-          Number.isNaN(item.sellingPrice)
+          Number.isNaN(item.sellingPrice) ||
+          item.sellingPrice <= item.priceIn
       );
 
       if (invalidRows.length > 0) {
-        toast.error(`Import stopped. Check required values in row ${invalidRows[0].rowNumber}.`);
+        toast.error(`Import stopped. Check required values and pricing in row ${invalidRows[0].rowNumber}.`);
         return;
       }
 
@@ -533,7 +546,7 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
             <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" isLoading={isSubmitting}>
+            <Button type="submit" isLoading={isSubmitting} disabled={!hasValidPricePair(formData)}>
               Create Stock
             </Button>
           </div>
@@ -559,7 +572,7 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
             <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" isLoading={isSubmitting}>
+            <Button type="submit" isLoading={isSubmitting} disabled={!hasValidPricePair(editFormData)}>
               Save Changes
             </Button>
           </div>
@@ -722,6 +735,9 @@ function StockFormFields({
           />
         </div>
       </div>
+      {!hasValidPricePair(formData) && formData.priceIn > 0 && formData.sellingPrice > 0 && (
+        <p className="text-xs text-red-500">Sell price must be higher than buy price.</p>
+      )}
     </>
   );
 }

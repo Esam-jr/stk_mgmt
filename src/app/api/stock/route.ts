@@ -14,18 +14,23 @@ async function generateThreeDigitBarcode(tx: Prisma.TransactionClient): Promise<
   throw new Error("Unable to generate unique 3-digit stock code");
 }
 
-const stockSchema = z.object({
-  name: z.string().min(1),
-  brandId: z.string().min(1),
-  categoryId: z.string().min(1),
-  size: z.string().min(1),
-  color: z.string().optional().nullable(),
-  quantity: z.coerce.number().int().min(0),
-  priceIn: z.coerce.number().positive(),
-  sellingPrice: z.coerce.number().positive(),
-  branchId: z.string().min(1),
-  barcode: z.string().regex(/^\d{3}$/, "Code must be exactly 3 digits").optional().nullable(),
-});
+const stockSchema = z
+  .object({
+    name: z.string().min(1),
+    brandId: z.string().min(1),
+    categoryId: z.string().min(1),
+    size: z.string().min(1),
+    color: z.string().optional().nullable(),
+    quantity: z.coerce.number().int().min(0),
+    priceIn: z.coerce.number().positive(),
+    sellingPrice: z.coerce.number().positive(),
+    branchId: z.string().min(1),
+    barcode: z.string().regex(/^\d{3}$/, "Code must be exactly 3 digits").optional().nullable(),
+  })
+  .refine((data) => data.sellingPrice > data.priceIn, {
+    path: ["sellingPrice"],
+    message: "Sell price must be higher than buy price",
+  });
 
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
