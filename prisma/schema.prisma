@@ -55,6 +55,7 @@ model User {
   activityLogs   ActivityLog[]
   sessions       Session[]
   accounts       Account[]
+  saleReturns    SaleReturn[]
 }
 
 model Branch {
@@ -69,6 +70,7 @@ model Branch {
   salesFrom  Sale[]
   transfersFrom StockTransfer[] @relation("TransferFrom")
   transfersTo   StockTransfer[] @relation("TransferTo")
+  saleReturns  SaleReturn[]
 }
 
 model Product {
@@ -103,22 +105,39 @@ model ProductVariant {
 
   sales      Sale[]
   transfers  StockTransfer[]
+  saleReturns SaleReturn[]
 
   @@unique([productId, size, color])
   @@index([size, color])
 }
 
 model Sale {
-  id            String        @id @default(cuid())
+  id              String        @id @default(cuid())
   productVariantId String
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-  quantity      Int
-  paymentMethod PaymentMethod
-  soldById      String
-  soldBy        User          @relation(fields: [soldById], references: [id])
-  branchId      String
-  branch        Branch        @relation(fields: [branchId], references: [id])
-  createdAt     DateTime      @default(now())
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  quantity        Int
+  paymentMethod   PaymentMethod
+  soldById        String
+  soldBy          User          @relation(fields: [soldById], references: [id])
+  branchId        String
+  branch          Branch        @relation(fields: [branchId], references: [id])
+  createdAt       DateTime      @default(now())
+
+  saleReturns     SaleReturn[]
+}
+
+model SaleReturn {
+  id              String          @id @default(cuid())
+  saleId          String
+  sale            Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productVariantId String
+  productVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
+  quantity        Int
+  refundedById    String
+  refundedBy      User            @relation(fields: [refundedById], references: [id])
+  branchId        String
+  branch          Branch          @relation(fields: [branchId], references: [id])
+  createdAt       DateTime        @default(now())
 }
 
 model StockTransfer {

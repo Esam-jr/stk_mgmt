@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 
 type Branch = { id: string; name: string };
 
@@ -28,6 +29,7 @@ type SaleRecord = {
   };
   soldBy: { id: string; firstName: string; lastName: string };
   branch: { id: string; name: string };
+  saleReturns: { quantity: number }[];
 };
 
 type SalesHistoryManagerProps = {
@@ -47,6 +49,14 @@ function itemLabel(sale: SaleRecord) {
   return `${brandName(sale)} - ${sale.productVariant.product.name} (${sale.productVariant.size}${sale.productVariant.color ? ` / ${sale.productVariant.color}` : ""})`;
 }
 
+function returnedQuantity(sale: SaleRecord) {
+  return sale.saleReturns?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
+}
+
+function returnableQuantity(sale: SaleRecord) {
+  return sale.quantity - returnedQuantity(sale);
+}
+
 export function SalesHistoryManager({ showBranchFilter = false, description }: SalesHistoryManagerProps) {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -55,6 +65,10 @@ export function SalesHistoryManager({ showBranchFilter = false, description }: S
   const [toDate, setToDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [branchId, setBranchId] = useState("");
+  const [selectedSale, setSelectedSale] = useState<SaleRecord | null>(null);
+  const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [returnQuantity, setReturnQuantity] = useState(1);
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
   const fetchSalesHistory = useCallback(async () => {
     setIsLoading(true);
@@ -118,11 +132,70 @@ export function SalesHistoryManager({ showBranchFilter = false, description }: S
     { header: "Unit Price", cell: (sale: SaleRecord) => `$${unitPrice(sale).toFixed(2)}` },
     { header: "Total", cell: (sale: SaleRecord) => `$${(sale.quantity * unitPrice(sale)).toFixed(2)}` },
     { header: "Payment", accessorKey: "paymentMethod" as keyof SaleRecord },
+    {
+      header: "Actions",
+      cell: (sale: SaleRecord) => {
+        const remaining = returnableQuantity(sale);
+        return remaining > 0 ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedSale(sale);
+              setReturnQuantity(1);
+              setIsReturnOpen(true);
+            }}
+          >
+            Return {remaining}
+          </Button>
+        ) : (
+          <span className="text-sm text-emerald-600 dark:text-emerald-400">Returned</span>
+        );
+      },
+    },
     { header: "Branch", cell: (sale: SaleRecord) => sale.branch.name },
     ...(showBranchFilter
       ? [{ header: "Sold By", cell: (sale: SaleRecord) => `${sale.soldBy.firstName} ${sale.soldBy.lastName}` }]
       : []),
   ];
+
+  const closeReturnModal = () => {
+    setIsReturnOpen(false);
+    setSelectedSale(null);
+    setReturnQuantity(1);
+  };
+
+  const handleConfirmReturn = async () => {
+    if (!selectedSale) return;
+
+    const maxReturnable = returnableQuantity(selectedSale);
+    if (returnQuantity < 1 || returnQuantity > maxReturnable) {
+      toast.error(`Enter a return quantity between 1 and ${maxReturnable}.`);
+      return;
+    }
+
+    setIsSubmittingReturn(true);
+    try {
+      const response = await fetch("/api/sales/return", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ saleId: selectedSale.id, quantity: returnQuantity }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Return failed");
+      }
+
+      toast.success(`Returned ${returnQuantity} unit(s) successfully.`);
+      closeReturnModal();
+      await fetchSalesHistory();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Return failed");
+    } finally {
+      setIsSubmittingReturn(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -196,6 +269,34 @@ export function SalesHistoryManager({ showBranchFilter = false, description }: S
           <DataTable columns={columns} data={filteredHistory} />
         )}
       </div>
+
+      <Modal isOpen={isReturnOpen} onClose={closeReturnModal} title="Return Sold Item">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {selectedSale
+              ? `Return units for ${itemLabel(selectedSale)}. You can return up to ${returnableQuantity(selectedSale)} unit(s).`
+              : "Select a sale to return."}
+          </p>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Return Quantity</label>
+            <Input
+              type="number"
+              min={1}
+              max={selectedSale ? returnableQuantity(selectedSale) : 1}
+              value={returnQuantity}
+              onChange={(event) => setReturnQuantity(Number(event.target.value))}
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={closeReturnModal} disabled={isSubmittingReturn}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmReturn} isLoading={isSubmittingReturn}>
+              Confirm Return
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
