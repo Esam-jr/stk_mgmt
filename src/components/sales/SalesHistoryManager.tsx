@@ -29,7 +29,12 @@ type SaleRecord = {
   };
   soldBy: { id: string; firstName: string; lastName: string };
   branch: { id: string; name: string };
-  saleReturns: { quantity: number }[];
+  saleReturns: {
+    id: string;
+    quantity: number;
+    createdAt: string;
+    refundedBy: { firstName: string; lastName: string } | null;
+  }[];
 };
 
 type SalesHistoryManagerProps = {
@@ -129,6 +134,22 @@ export function SalesHistoryManager({ showBranchFilter = false, description }: S
     { header: "Product", cell: itemLabel },
     { header: "Barcode", cell: (sale: SaleRecord) => sale.productVariant.barcode },
     { header: "Qty", accessorKey: "quantity" as keyof SaleRecord },
+    {
+      header: "Returned",
+      cell: (sale: SaleRecord) => {
+        if (!sale.saleReturns?.length) return "-";
+        return (
+          <div className="space-y-1">
+            {sale.saleReturns.map((item) => (
+              <div key={item.id} className="text-xs text-zinc-700 dark:text-zinc-200">
+                {item.quantity} returned on {new Date(item.createdAt).toLocaleDateString()}
+                {item.refundedBy ? ` by ${item.refundedBy.firstName} ${item.refundedBy.lastName}` : ""}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
     { header: "Unit Price", cell: (sale: SaleRecord) => `$${unitPrice(sale).toFixed(2)}` },
     { header: "Total", cell: (sale: SaleRecord) => `$${(sale.quantity * unitPrice(sale)).toFixed(2)}` },
     { header: "Payment", accessorKey: "paymentMethod" as keyof SaleRecord },

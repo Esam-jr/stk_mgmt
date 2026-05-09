@@ -45,7 +45,14 @@ export async function GET(request: NextRequest) {
       },
       soldBy: { select: { id: true, firstName: true, lastName: true } },
       branch: true,
-      saleReturns: { select: { quantity: true } },
+      saleReturns: {
+        select: {
+          id: true,
+          quantity: true,
+          createdAt: true,
+          refundedBy: { select: { firstName: true, lastName: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
