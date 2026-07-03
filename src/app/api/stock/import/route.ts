@@ -95,7 +95,6 @@ export async function POST(request: NextRequest) {
         ? await tx.productVariant.update({
             where: { id: existingVariant.id },
             data: {
-              productId: product.id,
               size: item.size,
               color: item.color || null,
               quantity: item.quantity,

@@ -312,13 +312,23 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
         return;
       }
 
-      const items = rows.map((row, index) => {
+      type ImportItem = {
+        rowNumber: number;
+        name: string; brandValue: string; brandId: string;
+        categoryValue: string; categoryId: string;
+        size: string; color: string | null;
+        quantity: number; priceIn: number; sellingPrice: number;
+        barcode: string | null; branchId: string;
+      };
+      const items: ImportItem[] = rows.map((row, index) => {
         const brandValue = readCell(row, ["Brand ID", "Brand"]);
         const categoryValue = readCell(row, ["Category ID", "Category"]);
         return {
           rowNumber: index + 2,
           name: readCell(row, ["Product Name", "Product", "Name"]),
+          brandValue,
           brandId: findCatalogId(brands, brandValue),
+          categoryValue,
           categoryId: findCatalogId(categories, categoryValue),
           size: readCell(row, ["Size"]),
           color: readCell(row, ["Color"]) || null,
@@ -330,20 +340,22 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
         };
       });
 
-      const invalidRows = items.filter(
-        (item) =>
-          !item.name ||
-          !item.brandId ||
-          !item.categoryId ||
-          !item.size ||
-          Number.isNaN(item.quantity) ||
-          Number.isNaN(item.priceIn) ||
-          Number.isNaN(item.sellingPrice) ||
-          item.sellingPrice <= item.priceIn
-      );
+      const invalidRows = items.map((item) => {
+        const issues: string[] = [];
+        if (!item.name) issues.push("empty name");
+        if (!item.brandId) issues.push(`brand "${item.brandValue}" not found`);
+        if (!item.categoryId) issues.push(`category "${item.categoryValue}" not found`);
+        if (!item.size) issues.push("empty size");
+        if (Number.isNaN(item.quantity)) issues.push("invalid quantity");
+        if (Number.isNaN(item.priceIn)) issues.push("invalid buy price");
+        if (Number.isNaN(item.sellingPrice)) issues.push("invalid sell price");
+        if (item.sellingPrice <= item.priceIn) issues.push("sell price must be > buy price");
+        return { row: item.rowNumber, issues };
+      }).filter((r) => r.issues.length > 0);
 
       if (invalidRows.length > 0) {
-        toast.error(`Import stopped. Check required values and pricing in row ${invalidRows[0].rowNumber}.`);
+        const first = invalidRows[0];
+        toast.error(`Row ${first.row}: ${first.issues.join(", ")}`);
         return;
       }
 
@@ -353,12 +365,15 @@ export function BranchStockManager({ backHref, canManageCatalog = false }: Branc
         body: JSON.stringify({ items }),
       });
 
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`${res.status}: ${errBody.slice(0, 300)}`);
+      }
       const result = await res.json();
       toast.success(`Imported ${result.created} new and updated ${result.updated} existing stock rows`);
       fetchBranchData();
-    } catch {
-      toast.error("Failed to import Excel file");
+    } catch (err) {
+      toast.error(`Import failed — ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsImporting(false);
     }
