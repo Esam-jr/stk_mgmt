@@ -9,7 +9,11 @@
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "supabase:migrate": "node scripts/run-with-supabase.cjs \"npx prisma migrate dev\"",
+    "supabase:push": "node scripts/run-with-supabase.cjs \"npx prisma db push\"",
+    "supabase:seed": "node scripts/run-with-supabase.cjs \"npx tsx prisma/seed.ts\"",
+    "supabase:studio": "node scripts/run-with-supabase.cjs \"npx prisma studio\""
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
