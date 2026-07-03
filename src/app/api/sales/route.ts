@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
           include: { product: { include: { brand: true } } },
         });
         if (!variant) throw new Error("Variant not found");
+        if (!variant.isActive) throw new Error("Variant has been removed from stock");
         if (variant.product.branchId !== userBranchId) throw new Error("Item is not in your branch");
         if (variant.quantity < item.quantity) {
           throw new Error(`Insufficient stock for ${variant.product.brand.name} ${variant.product.name} (${variant.size})`);

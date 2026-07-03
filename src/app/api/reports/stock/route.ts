@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
   const filterBranchId = branchId;
 
   const variants = await prisma.productVariant.findMany({
-    where: filterBranchId ? { product: { branchId: filterBranchId } } : undefined,
+    where: {
+      isActive: true,
+      ...(filterBranchId ? { product: { branchId: filterBranchId } } : {}),
+    },
     include: {
       product: {
         include: { branch: true, category: true, brand: true },

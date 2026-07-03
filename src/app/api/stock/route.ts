@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
   const branchId = searchParams.get("branchId");
 
   const variants = await prisma.productVariant.findMany({
-    where: branchId ? { product: { branchId } } : undefined,
+    where: {
+      isActive: true,
+      ...(branchId ? { product: { branchId } } : {}),
+    },
     include: {
       product: { include: { category: true, brand: true, branch: true } },
     },

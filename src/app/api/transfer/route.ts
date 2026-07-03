@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         include: { product: { include: { branch: true, brand: true } } },
       });
       if (!sourceVariant) throw new Error("Variant not found");
+      if (!sourceVariant.isActive) throw new Error("Source variant has been removed from stock");
       if (sourceVariant.quantity < quantity) throw new Error("Insufficient stock for transfer");
       if (sourceVariant.product.branchId === toBranchId) throw new Error("Cannot transfer to the same branch");
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
       if (targetVariant) {
         await tx.productVariant.update({
           where: { id: targetVariant.id },
-          data: { quantity: targetVariant.quantity + quantity },
+          data: { quantity: targetVariant.quantity + quantity, isActive: true },
         });
       } else {
         await tx.productVariant.create({

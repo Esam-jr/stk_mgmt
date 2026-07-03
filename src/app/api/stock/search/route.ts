@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
 
   const variants = await prisma.productVariant.findMany({
     where: {
+      isActive: true,
       AND: [
         effectiveBranchId ? { product: { branchId: effectiveBranchId } } : {},
         {

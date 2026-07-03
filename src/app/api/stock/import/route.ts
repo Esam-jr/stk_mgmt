@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
               size: item.size,
               color: item.color || null,
               quantity: item.quantity,
+              isActive: true,
             },
             include: { product: { include: { brand: true } } },
           })

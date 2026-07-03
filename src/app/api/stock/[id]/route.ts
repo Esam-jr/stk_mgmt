@@ -129,23 +129,21 @@ export async function DELETE(
     });
     if (!variant) return;
 
-    await tx.productVariant.delete({ where: { id } });
+    await tx.productVariant.update({
+      where: { id },
+      data: { isActive: false },
+    });
 
     await logActivity(tx, {
       action: "STOCK_DELETE",
       entityType: "ProductVariant",
       entityId: id,
       actorId: session.user.id,
-      description: `Deleted stock variant ${variant.product.brand.name} ${variant.product.name} (${variant.size}${variant.color ? `/${variant.color}` : ""})`,
+      description: `Deleted (soft) stock variant ${variant.product.brand.name} ${variant.product.name} (${variant.size}${variant.color ? `/${variant.color}` : ""})`,
       metadata: {
         branchId: variant.product.branchId,
       },
     });
-
-    const remaining = await tx.productVariant.count({ where: { productId: variant.productId } });
-    if (remaining === 0) {
-      await tx.product.delete({ where: { id: variant.productId } });
-    }
   });
   return Response.json({ success: true });
 }
